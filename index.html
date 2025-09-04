@@ -109,15 +109,6 @@
             background-color: #4b5563;
         }
 
-        .btn-success {
-            background-color: #10b981;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background-color: #059669;
-        }
-
         .outline-table {
             width: 100%;
             border-collapse: collapse;
@@ -349,6 +340,27 @@
         .hidden {
             display: none;
         }
+
+        /* Debug section */
+        .debug-section {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #1a202c;
+            border-radius: 8px;
+            color: #e2e8f0;
+        }
+
+        .debug-log {
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #2d3748;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -395,7 +407,6 @@
             <div class="controls">
                 <button class="btn btn-primary" onclick="addColumn()">Add Column</button>
                 <button class="btn btn-primary" onclick="addScene()">Add Scene</button>
-                <button class="btn btn-success" onclick="saveData()">Save Progress</button>
                 <button class="btn btn-secondary" onclick="exportData()">Export Data</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import Data</button>
@@ -495,6 +506,793 @@
                             <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                         </td>
                     </tr>
+                    <tr class="act3">
+                        <td class="scene-cell" contenteditable="true">
+                            Scene 9 (New Equilibrium) - 100%
+                            <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                        </td>
+                        <td class="data-cell" data-column="1">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="2">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="3">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="4">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="5">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="6">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="7">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="8">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="controls">
+                <p>Count totals will appear here automatically</p>
+            </div>
+        </div>
+
+        <!-- Debug Section -->
+        <div class="debug-section">
+            <h3>Debug Log</h3>
+            <div class="debug-log" id="debugLog">Firebase and app debug info will appear here...</div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsP9DDFsCCjC-1EpA8uzeRhWUfFrQ8-Zo",
+            authDomain: "jedi-8ce49.firebaseapp.com",
+            databaseURL: "https://jedi-8ce49-default-rtdb.firebaseio.com/",
+            projectId: "jedi-8ce49",
+            storageBucket: "jedi-8ce49.firebasestorage.app",
+            messagingSenderId: "1001546846157",
+            appId: "1:1001546846157:web:328f6ef11b9e32fbe7be84"
+        };
+
+        // Global variables
+        let currentUser = null;
+        let autoSaveTimeout = null;
+
+        // DOM elements
+        const authContainer = document.getElementById('authContainer');
+        const appContainer = document.getElementById('appContainer');
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const authError = document.getElementById('authError');
+        const firebaseStatus = document.getElementById('firebaseStatus');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const debugLog = document.getElementById('debugLog');
+
+        // Debug logging function
+        function logDebug(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            console.log(logMessage);
+            if (debugLog) {
+                debugLog.textContent += logMessage + '\n';
+                debugLog.scrollTop = debugLog.scrollHeight;
+            }
+        }
+
+        // Initialize Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            logDebug('Firebase initialized successfully');
+            firebaseStatus.textContent = 'Firebase: Initialized';
+        } catch (error) {
+            logDebug('Firebase initialization error: ' + error.message);
+            firebaseStatus.textContent = 'Firebase: Init Error';
+            firebaseStatus.classList.add('error');
+        }
+
+        // Authentication functions
+        function login() {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!email || !password) {
+                authError.textContent = 'Please enter both email and password';
+                return;
+            }
+
+            logDebug('Attempting login for: ' + email);
+            showLoading();
+            
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    authError.textContent = '';
+                    emailInput.value = '';
+                    passwordInput.value = '';
+                    logDebug('Login successful');
+                })
+                .catch(error => {
+                    authError.textContent = error.message;
+                    logDebug('Login error: ' + error.message);
+                    hideLoading();
+                });
+        }
+
+        function register() {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!email || !password) {
+                authError.textContent = 'Please enter both email and password';
+                return;
+            }
+
+            if (password.length < 6) {
+                authError.textContent = 'Password must be at least 6 characters';
+                return;
+            }
+
+            logDebug('Attempting registration for: ' + email);
+            showLoading();
+            
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then(() => {
+                    authError.textContent = '';
+                    emailInput.value = '';
+                    passwordInput.value = '';
+                    logDebug('Registration successful');
+                })
+                .catch(error => {
+                    authError.textContent = error.message;
+                    logDebug('Registration error: ' + error.message);
+                    hideLoading();
+                });
+        }
+
+        function logout() {
+            logDebug('Logging out');
+            firebase.auth().signOut();
+        }
+
+        // UI functions
+        function showLoading() {
+            loadingIndicator.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingIndicator.classList.add('hidden');
+        }
+
+        function showApp() {
+            authContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            firebaseStatus.textContent = 'Firebase: Connected';
+            firebaseStatus.classList.remove('error');
+        }
+
+        function showAuth() {
+            authContainer.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+            firebaseStatus.textContent = 'Firebase: Disconnected';
+            firebaseStatus.classList.add('error');
+        }
+
+        // Auto-save with debouncing
+        function scheduleAutoSave() {
+            if (autoSaveTimeout) {
+                clearTimeout(autoSaveTimeout);
+            }
+            autoSaveTimeout = setTimeout(() => {
+                if (currentUser) {
+                    saveData();
+                }
+            }, 1000);
+        }
+
+        // Data functions
+        function saveData() {
+            if (!currentUser) {
+                logDebug('Cannot save - no user logged in');
+                return;
+            }
+
+            try {
+                logDebug('Starting data save...');
+                const tableData = extractTableData();
+                
+                const data = {
+                    title: document.getElementById('bookTitle').value || 'Untitled Thriller',
+                    tableData: tableData,
+                    lastUpdated: new Date().toISOString()
+                };
+
+                logDebug('Extracted data - rows: ' + tableData.rows.length);
+
+                firebase.database().ref(`thriller-outlines/${currentUser.uid}`).set(data)
+                    .then(() => {
+                        firebaseStatus.textContent = 'Firebase: Saved ✓';
+                        firebaseStatus.classList.remove('error');
+                        logDebug('Data saved successfully');
+                        setTimeout(() => {
+                            if (firebaseStatus.textContent === 'Firebase: Saved ✓') {
+                                firebaseStatus.textContent = 'Firebase: Connected';
+                            }
+                        }, 2000);
+                    })
+                    .catch(error => {
+                        logDebug('Save error: ' + error.message);
+                        firebaseStatus.textContent = 'Firebase: Save Error';
+                        firebaseStatus.classList.add('error');
+                    });
+            } catch (error) {
+                logDebug('Data extraction error: ' + error.message);
+                firebaseStatus.textContent = 'Firebase: Data Error';
+                firebaseStatus.classList.add('error');
+            }
+        }
+
+        function extractTableData() {
+            const table = document.getElementById('outlineTable');
+            const rows = table.querySelectorAll('tbody tr:not(.count-row)');
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => {
+                const text = th.childNodes[0] ? th.childNodes[0].textContent : th.textContent;
+                return text.trim();
+            });
+
+            const extractedData = {
+                headers: headers,
+                rows: []
+            };
+
+            rows.forEach((row, rowIndex) => {
+                const cells = row.querySelectorAll('td');
+                const sceneCell = cells[0];
+                const sceneText = sceneCell.childNodes[0] ? sceneCell.childNodes[0].textContent.trim() : sceneCell.textContent.trim();
+                
+                const rowData = {
+                    scene: sceneText,
+                    actClass: row.className,
+                    columns: []
+                };
+
+                // Process data columns (skip scene column)
+                for (let i = 1; i < cells.length; i++) {
+                    const cell = cells[i];
+                    const textItems = cell.querySelectorAll('.text-item');
+                    const columnData = [];
+
+                    textItems.forEach(item => {
+                        const contentEl = item.querySelector('.item-content');
+                        const typeSelect = item.querySelector('.type-select');
+                        
+                        const content = contentEl ? (contentEl.value || contentEl.textContent || '') : '';
+                        const type = typeSelect ? typeSelect.value : '';
+                        
+                        if (content.trim()) {
+                            columnData.push({
+                                content: content.trim(),
+                                type: type
+                            });
+                        }
+                    });
+
+                    rowData.columns.push(columnData);
+                }
+
+                extractedData.rows.push(rowData);
+            });
+
+            return extractedData;
+        }
+
+        function loadData() {
+            if (!currentUser) return;
+
+            logDebug('Loading data for user: ' + currentUser.uid);
+            showLoading();
+            
+            firebase.database().ref(`thriller-outlines/${currentUser.uid}`).once('value')
+                .then(snapshot => {
+                    const data = snapshot.val();
+                    if (data) {
+                        logDebug('Data found - rebuilding table');
+                        
+                        // Set title
+                        document.getElementById('bookTitle').value = data.title || 'Untitled Thriller';
+                        
+                        // Load table data
+                        if (data.tableData) {
+                            rebuildTableFromData(data.tableData);
+                            logDebug('Table rebuilt from structured data');
+                        } else {
+                            logDebug('No structured data found');
+                        }
+                        
+                        firebaseStatus.textContent = 'Firebase: Data Loaded';
+                        firebaseStatus.classList.remove('error');
+                    } else {
+                        logDebug('No data found for user');
+                        firebaseStatus.textContent = 'Firebase: No Data';
+                        firebaseStatus.classList.remove('error');
+                    }
+                    hideLoading();
+                })
+                .catch(error => {
+                    logDebug('Load error: ' + error.message);
+                    firebaseStatus.textContent = 'Firebase: Load Error';
+                    firebaseStatus.classList.add('error');
+                    hideLoading();
+                });
+        }
+
+        function rebuildTableFromData(tableData) {
+            const table = document.getElementById('outlineTable');
+            const tbody = table.querySelector('tbody');
+            
+            // Clear existing rows
+            tbody.innerHTML = '';
+
+            // Rebuild rows from data
+            tableData.rows.forEach(rowData => {
+                const row = document.createElement('tr');
+                row.className = rowData.actClass || 'act2';
+                
+                // Scene cell
+                const sceneCell = document.createElement('td');
+                sceneCell.className = 'scene-cell';
+                sceneCell.contentEditable = true;
+                sceneCell.innerHTML = `${rowData.scene}<button class="scene-delete-btn" onclick="deleteRow(this)">×</button>`;
+                row.appendChild(sceneCell);
+
+                // Data cells
+                const expectedColumns = Math.max(8, rowData.columns.length); // Ensure at least 8 columns
+                for (let i = 0; i < expectedColumns; i++) {
+                    const dataCell = document.createElement('td');
+                    dataCell.className = 'data-cell';
+                    dataCell.setAttribute('data-column', i + 1);
+                    
+                    // Add text items if they exist
+                    if (i < rowData.columns.length && rowData.columns[i]) {
+                        rowData.columns[i].forEach(itemData => {
+                            addTextItemWithData(dataCell, itemData.content, itemData.type, i + 1);
+                        });
+                    }
+
+                    // Add the + button
+                    const addButton = document.createElement('button');
+                    addButton.className = 'add-item-btn';
+                    addButton.textContent = '+';
+                    addButton.onclick = function() { addTextItem(this); };
+                    dataCell.appendChild(addButton);
+
+                    row.appendChild(dataCell);
+                }
+
+                tbody.appendChild(row);
+            });
+
+            setupTableEventListeners();
+            updateAllCounts();
+        }
+
+        function addTextItemWithData(cell, content, type, columnIndex) {
+            const textItem = document.createElement('div');
+            textItem.className = 'text-item';
+            
+            if (type) {
+                textItem.classList.add('type-' + type);
+            }
+
+            const options = getOptionsForColumn(columnIndex);
+
+            if (options.length > 1) {
+                const optionsHtml = options.map(opt => 
+                    `<option value="${opt.value}" ${opt.value === type ? 'selected' : ''}>${opt.text}</option>`
+                ).join('');
+                
+                textItem.innerHTML = `
+                    <textarea class="item-content" placeholder="Enter your item...">${content}</textarea>
+                    <div class="item-controls">
+                        <select class="type-select" onchange="updateItemType(this)">
+                            ${optionsHtml}
+                        </select>
+                        <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+                    </div>
+                `;
+            } else {
+                textItem.innerHTML = `
+                    <textarea class="item-content" placeholder="Enter your item...">${content}</textarea>
+                    <div class="item-controls">
+                        <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+                    </div>
+                `;
+            }
+
+            const addButton = cell.querySelector('.add-item-btn');
+            cell.insertBefore(textItem, addButton);
+        }
+
+        function getOptionsForColumn(columnIndex) {
+            switch (columnIndex) {
+                case 3: // Major Red Herrings/Misdirection
+                    return [
+                        { value: 'false-suspect', text: 'False Suspect' },
+                        { value: 'misleading-motivation', text: 'Misleading Motivation' },
+                        { value: 'wrong-interpretation', text: 'Wrong Interpretation of Evidence' }
+                    ];
+                case 4: // Minor Misdirection
+                    return [
+                        { value: 'misleading-dialogue', text: 'Misleading Dialogue' },
+                        { value: 'coincidence', text: 'Coincidence that Suggests Wrong Conclusion' },
+                        { value: 'character-behavior', text: 'Character Behavior that Implies False Things' }
+                    ];
+                case 5: // Major Contradictions/Inconsistencies
+                    return [
+                        { value: 'memory-error', text: 'Memory "Error" about Key Events' },
+                        { value: 'relationship-lie', text: 'Lie about Relationships/Past' },
+                        { value: 'misperception', text: 'Misperception about Current Events' }
+                    ];
+                case 6: // Minor Inconsistencies
+                    return [
+                        { value: 'timeline-error', text: 'Small Timeline Error' },
+                        { value: 'emotional-contradiction', text: 'Emotional Contradiction' },
+                        { value: 'detail-inconsistency', text: 'Details that Don\'t Add Up' }
+                    ];
+                case 7: // Major Twist/Revelation
+                    return [
+                        { value: 'major-revelation', text: 'Major Twist/Revelation' }
+                    ];
+                case 8: // Minor Revelations/Other Information
+                    return [
+                        { value: 'character-backstory', text: 'Character Backstory Reveal' },
+                        { value: 'relationship-truth', text: 'Relationship Truth' },
+                        { value: 'small-mystery', text: 'Small Mystery Solution' }
+                    ];
+                default:
+                    return [];
+            }
+        }
+
+        // Table manipulation functions
+        function addTextItem(button) {
+            const cell = button.parentNode;
+            const columnIndex = parseInt(cell.dataset.column);
+            const textItem = document.createElement('div');
+            textItem.className = 'text-item';
+
+            const options = getOptionsForColumn(columnIndex);
+
+            if (options.length > 1) {
+                textItem.innerHTML = `
+                    <textarea class="item-content" placeholder="Enter your item..."></textarea>
+                    <div class="item-controls">
+                        <select class="type-select" onchange="updateItemType(this)">
+                            ${options.map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('')}
+                        </select>
+                        <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+                    </div>
+                `;
+            } else {
+                textItem.innerHTML = `
+                    <textarea class="item-content" placeholder="Enter your item..."></textarea>
+                    <div class="item-controls">
+                        <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+                    </div>
+                `;
+            }
+
+            cell.insertBefore(textItem, button);
+            updateAllCounts();
+            scheduleAutoSave();
+            
+            logDebug('Added text item to column ' + columnIndex);
+        }
+
+        function deleteTextItem(button) {
+            const textItem = button.closest('.text-item');
+            textItem.remove();
+            updateAllCounts();
+            scheduleAutoSave();
+            
+            logDebug('Deleted text item');
+        }
+
+        function updateItemType(select) {
+            const textItem = select.closest('.text-item');
+            
+            // Remove all type classes
+            const typeClasses = [
+                'type-false-suspect', 'type-misleading-motivation', 'type-wrong-interpretation',
+                'type-misleading-dialogue', 'type-coincidence', 'type-character-behavior',
+                'type-major-revelation', 'type-character-backstory', 'type-relationship-truth',
+                'type-small-mystery', 'type-memory-error', 'type-relationship-lie',
+                'type-misperception', 'type-timeline-error', 'type-emotional-contradiction',
+                'type-detail-inconsistency'
+            ];
+            
+            typeClasses.forEach(cls => textItem.classList.remove(cls));
+            
+            // Add new type class
+            textItem.classList.add('type-' + select.value);
+            scheduleAutoSave();
+            
+            logDebug('Updated item type to: ' + select.value);
+        }
+
+        function addColumn() {
+            const table = document.getElementById('outlineTable');
+            const headerRow = table.querySelector('thead tr');
+            const bodyRows = table.querySelectorAll('tbody tr:not(.count-row)');
+            
+            // Add header
+            const newHeader = document.createElement('th');
+            newHeader.className = 'column-header';
+            newHeader.innerHTML = `
+                New Column
+                <div class="header-controls">
+                    <button class="header-btn" onclick="editColumnHeader(this)">✎</button>
+                    <button class="header-btn" onclick="deleteColumn(this)">✗</button>
+                </div>
+            `;
+            headerRow.appendChild(newHeader);
+            
+            // Add cells to existing rows
+            const newColumnIndex = headerRow.children.length - 1;
+            bodyRows.forEach(row => {
+                const newCell = document.createElement('td');
+                newCell.className = 'data-cell';
+                newCell.setAttribute('data-column', newColumnIndex);
+                newCell.innerHTML = '<button class="add-item-btn" onclick="addTextItem(this)">+</button>';
+                row.appendChild(newCell);
+            });
+            
+            scheduleAutoSave();
+            logDebug('Added new column');
+        }
+
+        function deleteColumn(button) {
+            if (!confirm('Are you sure you want to delete this column?')) return;
+            
+            const header = button.closest('th');
+            const columnIndex = Array.from(header.parentNode.children).indexOf(header);
+            
+            if (columnIndex === 0) {
+                alert('Cannot delete the scenes column');
+                return;
+            }
+            
+            // Remove header
+            header.remove();
+            
+            // Remove corresponding cells
+            const table = document.getElementById('outlineTable');
+            const bodyRows = table.querySelectorAll('tbody tr');
+            bodyRows.forEach(row => {
+                if (row.children[columnIndex]) {
+                    row.children[columnIndex].remove();
+                }
+            });
+            
+            updateAllCounts();
+            scheduleAutoSave();
+            logDebug('Deleted column ' + columnIndex);
+        }
+
+        function addScene() {
+            const table = document.getElementById('outlineTable').querySelector('tbody');
+            const columnCount = document.querySelectorAll('thead th').length;
+            const sceneCount = table.querySelectorAll('tr:not(.count-row)').length + 1;
+            
+            const newRow = document.createElement('tr');
+            newRow.className = 'act2'; // Default to act 2
+            
+            // Scene cell
+            const sceneCell = document.createElement('td');
+            sceneCell.className = 'scene-cell';
+            sceneCell.contentEditable = true;
+            sceneCell.innerHTML = `
+                Scene ${sceneCount} - New Scene
+                <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+            `;
+            newRow.appendChild(sceneCell);
+            
+            // Data cells
+            for (let i = 1; i < columnCount; i++) {
+                const dataCell = document.createElement('td');
+                dataCell.className = 'data-cell';
+                dataCell.setAttribute('data-column', i);
+                dataCell.innerHTML = '<button class="add-item-btn" onclick="addTextItem(this)">+</button>';
+                newRow.appendChild(dataCell);
+            }
+            
+            // Insert before count row if it exists
+            const countRow = table.querySelector('.count-row');
+            if (countRow) {
+                table.insertBefore(newRow, countRow);
+            } else {
+                table.appendChild(newRow);
+            }
+            
+            scheduleAutoSave();
+            logDebug('Added new scene');
+        }
+
+        function deleteRow(button) {
+            if (!confirm('Are you sure you want to delete this scene?')) return;
+            
+            const row = button.closest('tr');
+            row.remove();
+            updateAllCounts();
+            scheduleAutoSave();
+            logDebug('Deleted scene row');
+        }
+
+        function editColumnHeader(button) {
+            const header = button.closest('th');
+            const currentText = header.firstChild.textContent.trim();
+            const newText = prompt('Edit column header:', currentText);
+            
+            if (newText && newText !== currentText) {
+                header.firstChild.textContent = newText;
+                scheduleAutoSave();
+                logDebug('Edited column header: ' + newText);
+            }
+        }
+
+        function updateAllCounts() {
+            const table = document.getElementById('outlineTable');
+            const headers = table.querySelectorAll('thead th');
+            
+            // Remove existing count row
+            const existingCountRow = table.querySelector('.count-row');
+            if (existingCountRow) {
+                existingCountRow.remove();
+            }
+            
+            // Create new count row
+            const countRow = document.createElement('tr');
+            countRow.className = 'count-row';
+            
+            headers.forEach((header, index) => {
+                const countCell = document.createElement('td');
+                countCell.className = 'count-cell';
+                
+                if (index === 0) {
+                    countCell.textContent = 'TOTALS:';
+                } else {
+                    const columnCells = table.querySelectorAll(`td[data-column="${index}"]`);
+                    let count = 0;
+                    
+                    columnCells.forEach(cell => {
+                        count += cell.querySelectorAll('.text-item').length;
+                    });
+                    
+                    countCell.textContent = count;
+                }
+                
+                countRow.appendChild(countCell);
+            });
+            
+            table.querySelector('tbody').appendChild(countRow);
+        }
+
+        function setupTableEventListeners() {
+            // Auto-save on content changes
+            document.addEventListener('input', function(e) {
+                if (e.target.classList.contains('item-content') || 
+                    e.target.id === 'bookTitle' || 
+                    e.target.classList.contains('scene-cell')) {
+                    scheduleAutoSave();
+                }
+            });
+            
+            updateAllCounts();
+            logDebug('Table event listeners set up');
+        }
+
+        function exportData() {
+            const data = {
+                title: document.getElementById('bookTitle').value,
+                tableData: extractTableData(),
+                exportDate: new Date().toISOString()
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'thriller-outline-' + new Date().toISOString().slice(0,10) + '.json';
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            logDebug('Data exported');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    document.getElementById('bookTitle').value = data.title || 'Imported Thriller';
+                    if (data.tableData) {
+                        rebuildTableFromData(data.tableData);
+                        scheduleAutoSave();
+                        logDebug('Data imported successfully');
+                    }
+                } catch (error) {
+                    alert('Error importing file: ' + error.message);
+                    logDebug('Import error: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Auth state listener
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('userInitial').textContent = user.email.charAt(0).toUpperCase();
+                document.getElementById('displayName').textContent = user.email;
+                logDebug('User logged in: ' + user.email);
+                showApp();
+                loadData();
+            } else {
+                currentUser = null;
+                logDebug('User logged out');
+                showAuth();
+                hideLoading();
+            }
+        });
+
+        // Event listeners
+        document.getElementById('loginBtn').addEventListener('click', login);
+        document.getElementById('registerBtn').addEventListener('click', register);
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        // Enter key listeners for auth
+        emailInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') login();
+        });
+        passwordInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') login();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            logDebug('DOM loaded - initializing app');
+            setupTableEventListeners();
+            
+            // Auto-save every 30 seconds if logged in
+            setInterval(() => {
+                if (currentUser && document.getElementById('bookTitle').value.trim()) {
+                    logDebug('Periodic auto-save triggered');
+                    saveData();
+                }
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                    </tr>
                     <tr class="act1">
                         <td class="scene-cell" contenteditable="true">
                             Scene 2 (Inciting Incident) - 16%
@@ -555,538 +1353,152 @@
                             <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                         </td>
                     </tr>
-                </tbody>
-            </table>
-
-            <div class="controls">
-                <p>Count totals will appear here automatically</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-database-compat.js"></script>
-
-    <script>
-        // Firebase configuration - USING THE SAME AS YOUR JEDI PROJECT
-        const firebaseConfig = {
-            apiKey: "AIzaSyCsP9DDFsCCjC-1EpA8uzeRhWUfFrQ8-Zo",
-            authDomain: "jedi-8ce49.firebaseapp.com",
-            databaseURL: "https://jedi-8ce49-default-rtdb.firebaseio.com/",
-            projectId: "jedi-8ce49",
-            storageBucket: "jedi-8ce49.firebasestorage.app",
-            messagingSenderId: "1001546846157",
-            appId: "1:1001546846157:web:328f6ef11b9e32fbe7be84"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-
-        // Global variables
-        let currentUser = null;
-        let outlineData = {
-            title: 'Untitled Thriller',
-            scenes: [],
-            columns: []
-        };
-
-        // DOM elements
-        const authContainer = document.getElementById('authContainer');
-        const appContainer = document.getElementById('appContainer');
-        const emailInput = document.getElementById('emailInput');
-        const passwordInput = document.getElementById('passwordInput');
-        const authError = document.getElementById('authError');
-        const firebaseStatus = document.getElementById('firebaseStatus');
-        const loadingIndicator = document.getElementById('loadingIndicator');
-
-        // Authentication functions
-        function login() {
-            const email = emailInput.value.trim();
-            const password = passwordInput.value.trim();
-
-            if (!email || !password) {
-                authError.textContent = 'Please enter both email and password';
-                return;
-            }
-
-            showLoading();
-            firebase.auth().signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    authError.textContent = '';
-                    emailInput.value = '';
-                    passwordInput.value = '';
-                })
-                .catch(error => {
-                    authError.textContent = error.message;
-                    hideLoading();
-                });
-        }
-
-        function register() {
-            const email = emailInput.value.trim();
-            const password = passwordInput.value.trim();
-
-            if (!email || !password) {
-                authError.textContent = 'Please enter both email and password';
-                return;
-            }
-
-            if (password.length < 6) {
-                authError.textContent = 'Password must be at least 6 characters';
-                return;
-            }
-
-            showLoading();
-            firebase.auth().createUserWithEmailAndPassword(email, password)
-                .then(() => {
-                    authError.textContent = '';
-                    emailInput.value = '';
-                    passwordInput.value = '';
-                })
-                .catch(error => {
-                    authError.textContent = error.message;
-                    hideLoading();
-                });
-        }
-
-        function logout() {
-            firebase.auth().signOut();
-        }
-
-        // UI functions
-        function showLoading() {
-            loadingIndicator.classList.remove('hidden');
-        }
-
-        function hideLoading() {
-            loadingIndicator.classList.add('hidden');
-        }
-
-        function showApp() {
-            authContainer.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-            firebaseStatus.textContent = 'Firebase: Connected';
-            firebaseStatus.classList.remove('error');
-        }
-
-        function showAuth() {
-            authContainer.classList.remove('hidden');
-            appContainer.classList.add('hidden');
-            firebaseStatus.textContent = 'Firebase: Disconnected';
-            firebaseStatus.classList.add('error');
-        }
-
-        // Data functions
-        function saveData() {
-            if (!currentUser) return;
-
-            const data = {
-                title: document.getElementById('bookTitle').value,
-                table: document.getElementById('outlineTable').outerHTML,
-                lastUpdated: new Date().toISOString()
-            };
-
-            // Save under a different path than your Jedi project
-            firebase.database().ref(`thriller-outlines/${currentUser.uid}`).set(data)
-                .then(() => {
-                    firebaseStatus.textContent = 'Firebase: Saved';
-                    setTimeout(() => {
-                        firebaseStatus.textContent = 'Firebase: Connected';
-                    }, 2000);
-                })
-                .catch(error => {
-                    console.error('Save error:', error);
-                    firebaseStatus.textContent = 'Firebase: Error saving';
-                    firebaseStatus.classList.add('error');
-                });
-        }
-
-        function loadData() {
-            if (!currentUser) return;
-
-            showLoading();
-            firebase.database().ref(`thriller-outlines/${currentUser.uid}`).once('value')
-                .then(snapshot => {
-                    const data = snapshot.val();
-                    if (data) {
-                        document.getElementById('bookTitle').value = data.title || 'Untitled Thriller';
-                        if (data.table) {
-                            document.getElementById('outlineTable').outerHTML = data.table;
-                            setupTableEventListeners();
-                        }
-                        firebaseStatus.textContent = 'Firebase: Data loaded';
-                    } else {
-                        firebaseStatus.textContent = 'Firebase: No data found';
-                    }
-                    hideLoading();
-                })
-                .catch(error => {
-                    console.error('Load error:', error);
-                    firebaseStatus.textContent = 'Firebase: Error loading';
-                    firebaseStatus.classList.add('error');
-                    hideLoading();
-                });
-        }
-
-        function exportData() {
-            const data = {
-                title: document.getElementById('bookTitle').value,
-                table: document.getElementById('outlineTable').outerHTML,
-                exportDate: new Date().toISOString()
-            };
-
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'thriller-outline-' + new Date().toISOString().slice(0,10) + '.json';
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    document.getElementById('bookTitle').value = data.title || 'Imported Thriller';
-                    if (data.table) {
-                        document.getElementById('outlineTable').outerHTML = data.table;
-                        setupTableEventListeners();
-                        saveData(); // Auto-save after import
-                    }
-                } catch (error) {
-                    alert('Error importing file: ' + error.message);
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // Table manipulation functions
-        function addTextItem(button) {
-            const cell = button.parentNode;
-            const columnIndex = parseInt(cell.dataset.column);
-            const textItem = document.createElement('div');
-            textItem.className = 'text-item';
-
-            let options = [];
-            switch (columnIndex) {
-                case 3: // Major Red Herrings/Misdirection
-                    options = [
-                        { value: 'false-suspect', text: 'False Suspect' },
-                        { value: 'misleading-motivation', text: 'Misleading Motivation' },
-                        { value: 'wrong-interpretation', text: 'Wrong Interpretation of Evidence' }
-                    ];
-                    break;
-                case 4: // Minor Misdirection
-                    options = [
-                        { value: 'misleading-dialogue', text: 'Misleading Dialogue' },
-                        { value: 'coincidence', text: 'Coincidence that Suggests Wrong Conclusion' },
-                        { value: 'character-behavior', text: 'Character Behavior that Implies False Things' }
-                    ];
-                    break;
-                case 5: // Major Contradictions/Inconsistencies
-                    options = [
-                        { value: 'memory-error', text: 'Memory "Error" about Key Events' },
-                        { value: 'relationship-lie', text: 'Lie about Relationships/Past' },
-                        { value: 'misperception', text: 'Misperception about Current Events' }
-                    ];
-                    break;
-                case 6: // Minor Inconsistencies
-                    options = [
-                        { value: 'timeline-error', text: 'Small Timeline Error' },
-                        { value: 'emotional-contradiction', text: 'Emotional Contradiction' },
-                        { value: 'detail-inconsistency', text: 'Details that Don\'t Add Up' }
-                    ];
-                    break;
-                case 7: // Major Twist/Revelation
-                    options = [
-                        { value: 'major-revelation', text: 'Major Twist/Revelation' }
-                    ];
-                    break;
-                case 8: // Minor Revelations/Other Information
-                    options = [
-                        { value: 'character-backstory', text: 'Character Backstory Reveal' },
-                        { value: 'relationship-truth', text: 'Relationship Truth' },
-                        { value: 'small-mystery', text: 'Small Mystery Solution' }
-                    ];
-                    break;
-                default:
-                    options = [{ value: 'general', text: 'General' }];
-            }
-
-            if (options.length > 1) {
-                textItem.innerHTML = `
-                    <textarea class="item-content" placeholder="Enter your item..."></textarea>
-                    <div class="item-controls">
-                        <select class="type-select" onchange="updateItemType(this)">
-                            ${options.map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('')}
-                        </select>
-                        <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
-                    </div>
-                `;
-            } else {
-                textItem.innerHTML = `
-                    <textarea class="item-content" placeholder="Enter your item..."></textarea>
-                    <div class="item-controls">
-                        <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
-                    </div>
-                `;
-            }
-
-            cell.insertBefore(textItem, button);
-            updateAllCounts();
-
-            // Auto-save after adding item
-            setTimeout(saveData, 500);
-        }
-
-        function deleteTextItem(button) {
-            const textItem = button.closest('.text-item');
-            textItem.remove();
-            updateAllCounts();
-            
-            // Auto-save after deleting item
-            setTimeout(saveData, 500);
-        }
-
-        function updateItemType(select) {
-            const textItem = select.closest('.text-item');
-            
-            // Remove all type classes
-            const typeClasses = [
-                'type-false-suspect', 'type-misleading-motivation', 'type-wrong-interpretation',
-                'type-misleading-dialogue', 'type-coincidence', 'type-character-behavior',
-                'type-major-revelation', 'type-character-backstory', 'type-relationship-truth',
-                'type-small-mystery', 'type-memory-error', 'type-relationship-lie',
-                'type-misperception', 'type-timeline-error', 'type-emotional-contradiction',
-                'type-detail-inconsistency'
-            ];
-            
-            typeClasses.forEach(cls => textItem.classList.remove(cls));
-            
-            // Add new type class
-            textItem.classList.add('type-' + select.value);
-            
-            // Auto-save after type change
-            setTimeout(saveData, 500);
-        }
-
-        function addColumn() {
-            const table = document.getElementById('outlineTable');
-            const headerRow = table.querySelector('thead tr');
-            const bodyRows = table.querySelectorAll('tbody tr');
-            
-            // Add header
-            const newHeader = document.createElement('th');
-            newHeader.className = 'column-header';
-            newHeader.innerHTML = `
-                New Column
-                <div class="header-controls">
-                    <button class="header-btn" onclick="editColumnHeader(this)">✎</button>
-                    <button class="header-btn" onclick="deleteColumn(this)">✗</button>
-                </div>
-            `;
-            headerRow.appendChild(newHeader);
-            
-            // Add cells to existing rows
-            const newColumnIndex = headerRow.children.length - 1;
-            bodyRows.forEach(row => {
-                const newCell = document.createElement('td');
-                newCell.className = 'data-cell';
-                newCell.setAttribute('data-column', newColumnIndex);
-                newCell.innerHTML = '<button class="add-item-btn" onclick="addTextItem(this)">+</button>';
-                row.appendChild(newCell);
-            });
-            
-            // Auto-save after adding column
-            setTimeout(saveData, 500);
-        }
-
-        function deleteColumn(button) {
-            if (!confirm('Are you sure you want to delete this column?')) return;
-            
-            const header = button.closest('th');
-            const columnIndex = Array.from(header.parentNode.children).indexOf(header);
-            
-            if (columnIndex === 0) {
-                alert('Cannot delete the scenes column');
-                return;
-            }
-            
-            // Remove header
-            header.remove();
-            
-            // Remove corresponding cells
-            const table = document.getElementById('outlineTable');
-            const bodyRows = table.querySelectorAll('tbody tr');
-            bodyRows.forEach(row => {
-                if (row.children[columnIndex]) {
-                    row.children[columnIndex].remove();
-                }
-            });
-            
-            updateAllCounts();
-            
-            // Auto-save after deleting column
-            setTimeout(saveData, 500);
-        }
-
-        function addScene() {
-            const table = document.getElementById('outlineTable').querySelector('tbody');
-            const columnCount = document.querySelectorAll('thead th').length;
-            const sceneCount = table.querySelectorAll('tr').length + 1;
-            
-            const newRow = document.createElement('tr');
-            newRow.className = 'act2'; // Default to act 2
-            
-            // Scene cell
-            const sceneCell = document.createElement('td');
-            sceneCell.className = 'scene-cell';
-            sceneCell.contentEditable = true;
-            sceneCell.innerHTML = `
-                Scene ${sceneCount} - New Scene
-                <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
-            `;
-            newRow.appendChild(sceneCell);
-            
-            // Data cells
-            for (let i = 1; i < columnCount; i++) {
-                const dataCell = document.createElement('td');
-                dataCell.className = 'data-cell';
-                dataCell.setAttribute('data-column', i);
-                dataCell.innerHTML = '<button class="add-item-btn" onclick="addTextItem(this)">+</button>';
-                newRow.appendChild(dataCell);
-            }
-            
-            table.appendChild(newRow);
-            
-            // Auto-save after adding scene
-            setTimeout(saveData, 500);
-        }
-
-        function deleteRow(button) {
-            if (!confirm('Are you sure you want to delete this scene?')) return;
-            
-            const row = button.closest('tr');
-            row.remove();
-            updateAllCounts();
-            
-            // Auto-save after deleting scene
-            setTimeout(saveData, 500);
-        }
-
-        function editColumnHeader(button) {
-            const header = button.closest('th');
-            const currentText = header.firstChild.textContent.trim();
-            const newText = prompt('Edit column header:', currentText);
-            
-            if (newText && newText !== currentText) {
-                header.firstChild.textContent = newText;
-                
-                // Auto-save after editing header
-                setTimeout(saveData, 500);
-            }
-        }
-
-        function updateAllCounts() {
-            const table = document.getElementById('outlineTable');
-            const headers = table.querySelectorAll('thead th');
-            
-            // Remove existing count row
-            const existingCountRow = table.querySelector('.count-row');
-            if (existingCountRow) {
-                existingCountRow.remove();
-            }
-            
-            // Create new count row
-            const countRow = document.createElement('tr');
-            countRow.className = 'count-row';
-            
-            headers.forEach((header, index) => {
-                const countCell = document.createElement('td');
-                countCell.className = 'count-cell';
-                
-                if (index === 0) {
-                    countCell.textContent = 'TOTALS:';
-                } else {
-                    const columnCells = table.querySelectorAll(`td[data-column="${index}"]`);
-                    let count = 0;
-                    
-                    columnCells.forEach(cell => {
-                        count += cell.querySelectorAll('.text-item').length;
-                    });
-                    
-                    countCell.textContent = count;
-                }
-                
-                countRow.appendChild(countCell);
-            });
-            
-            table.querySelector('tbody').appendChild(countRow);
-        }
-
-        function setupTableEventListeners() {
-            // Add auto-save on content changes
-            document.addEventListener('input', function(e) {
-                if (e.target.classList.contains('item-content') || 
-                    e.target.id === 'bookTitle' || 
-                    e.target.classList.contains('scene-cell')) {
-                    
-                    // Debounced auto-save
-                    clearTimeout(window.autoSaveTimeout);
-                    window.autoSaveTimeout = setTimeout(saveData, 1000);
-                }
-            });
-            
-            updateAllCounts();
-        }
-
-        // Auth state listener
-        firebase.auth().onAuthStateChanged(user => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('userInitial').textContent = user.email.charAt(0).toUpperCase();
-                document.getElementById('displayName').textContent = user.email;
-                showApp();
-                loadData();
-            } else {
-                currentUser = null;
-                showAuth();
-                hideLoading();
-            }
-        });
-
-        // Event listeners
-        document.getElementById('loginBtn').addEventListener('click', login);
-        document.getElementById('registerBtn').addEventListener('click', register);
-        document.getElementById('logoutBtn').addEventListener('click', logout);
-
-        // Enter key listeners for auth
-        emailInput.addEventListener('keypress', e => {
-            if (e.key === 'Enter') login();
-        });
-        passwordInput.addEventListener('keypress', e => {
-            if (e.key === 'Enter') login();
-        });
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            setupTableEventListeners();
-            
-            // Auto-save every 30 seconds if logged in
-            setInterval(() => {
-                if (currentUser) {
-                    saveData();
-                }
-            }, 30000);
-        });
-    </script>
-</body>
-</html>
+                    <!-- ACT II -->
+                    <tr class="act2">
+                        <td class="scene-cell" contenteditable="true">
+                            Scene 4 (First Encounters) - 37%
+                            <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                        </td>
+                        <td class="data-cell" data-column="1">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="2">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="3">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="4">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="5">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="6">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="7">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="8">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                    </tr>
+                    <tr class="act2">
+                        <td class="scene-cell" contenteditable="true">
+                            Scene 5 (Midpoint Revelation) - 50%
+                            <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                        </td>
+                        <td class="data-cell" data-column="1">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="2">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="3">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="4">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="5">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="6">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="7">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="8">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                    </tr>
+                    <tr class="act2">
+                        <td class="scene-cell" contenteditable="true">
+                            Scene 6 (Things Get Worse) - 75%
+                            <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                        </td>
+                        <td class="data-cell" data-column="1">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="2">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="3">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="4">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="5">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="6">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="7">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="8">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                    </tr>
+                    <!-- ACT III -->
+                    <tr class="act3">
+                        <td class="scene-cell" contenteditable="true">
+                            Scene 7 (Final Confrontation) - 87%
+                            <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                        </td>
+                        <td class="data-cell" data-column="1">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="2">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="3">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="4">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="5">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="6">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="7">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="8">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                    </tr>
+                    <tr class="act3">
+                        <td class="scene-cell" contenteditable="true">
+                            Scene 8 (Resolution of the Sin) - 93%
+                            <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                        </td>
+                        <td class="data-cell" data-column="1">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="2">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="3">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="4">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="5">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="6">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="7">
+                            <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                        </td>
+                        <td class="data-cell" data-column="8">
