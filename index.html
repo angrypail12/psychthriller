@@ -839,7 +839,6 @@
         }
 
         function ensureFullTable() {
-    cleanupOrphanedElements(); // ADD THIS LINE
     // Make sure we have all 9 scenes visible
     const tbody = document.querySelector('#outlineTable tbody');
     const existingRows = tbody.querySelectorAll('tr:not(.count-row)');
@@ -858,7 +857,6 @@
 }
 
 function rebuildDefaultTable() {
-    cleanupOrphanedElements(); // ADD THIS LINE
     const tbody = document.querySelector('#outlineTable tbody');
     tbody.innerHTML = '';
 
@@ -968,45 +966,6 @@ function rebuildDefaultTable() {
     setupTableEventListeners();
     updateAllCounts();
     logDebug('Table rebuilt from structured data');
-}
-
-        function cleanupOrphanedElements() {
-    // Remove any stray elements that got detached from the table
-    const debugSection = document.querySelector('.debug-section');
-    if (debugSection) {
-        let nextElement = debugSection.nextElementSibling;
-        while (nextElement) {
-            const elementToRemove = nextElement;
-            nextElement = nextElement.nextElementSibling;
-            
-            // Remove any element after the debug section that shouldn't be there
-            // This includes buttons, text nodes, and any orphaned content
-            elementToRemove.remove();
-        }
-    }
-    
-    // Also remove any floating elements that might be direct children of body
-    // but aren't part of the main structure
-    const body = document.body;
-    const validElements = ['authContainer', 'appContainer'];
-    
-    Array.from(body.children).forEach(child => {
-        // Keep only the main containers and script tags
-        if (!validElements.includes(child.id) && 
-            child.tagName !== 'SCRIPT' && 
-            !child.classList.contains('debug-section')) {
-            
-            // Check if it's an orphaned element (like stray buttons or text)
-            if (child.tagName === 'BUTTON' || 
-                (child.textContent && child.textContent.includes('Scene')) ||
-                child.classList.contains('add-item-btn') ||
-                child.textContent.includes('%')) {
-                child.remove();
-            }
-        }
-    });
-    
-    logDebug('Cleaned up orphaned elements');
 }
 
         function addTextItemWithData(cell, content, type, columnIndex) {
