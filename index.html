@@ -245,6 +245,74 @@
             font-size: 10px;
         }
 
+        /* Frozen table headers and first column */
+.outline-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 13px;
+    position: relative;
+}
+
+.outline-table thead th {
+    background-color: #f8fafc;
+    padding: 12px 8px;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+    font-weight: 600;
+    font-size: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.outline-table tbody td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: #f1f5f9;
+    z-index: 5;
+}
+
+.outline-table thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 15;
+    background-color: #f8fafc;
+}
+
+.outline-table thead th:nth-child(2) {
+    position: sticky;
+    left: 120px; /* Width of first column */
+    z-index: 15;
+    background-color: #f8fafc;
+}
+
+.outline-table tbody td:nth-child(2) {
+    position: sticky;
+    left: 120px;
+    background-color: #e0f2fe;
+    z-index: 5;
+    text-align: center;
+    font-weight: 600;
+    font-size: 11px;
+    vertical-align: middle;
+}
+
+/* Act summary styling */
+.act-summary-cell {
+    background-color: #e0f2fe !important;
+    border-left: 4px solid #0369a1;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+.act1-summary { border-left-color: #10b981; background-color: #d1fae5 !important; }
+.act2-summary { border-left-color: #f59e0b; background-color: #fef3c7 !important; }
+.act3-summary { border-left-color: #ef4444; background-color: #fee2e2 !important; }
+
         .count-row {
             background-color: #f1f5f9;
             font-weight: bold;
@@ -416,6 +484,7 @@
                 <thead>
                     <tr>
                         <th>Scenes</th>
+                        <th class="act-summary-header">Act Summary</th>
                         <th class="column-header">
                             Legit Clues - Obvious (3-4 total)
                             <div class="header-controls">
@@ -813,7 +882,7 @@ function rebuildDefaultTable() {
 
     const columnCount = document.querySelectorAll('#outlineTable thead th').length;
 
-    defaultScenes.forEach(scene => {
+    defaultScenes.forEach((scene, index) => {
         const row = document.createElement('tr');
         row.className = scene.class;
 
@@ -824,8 +893,29 @@ function rebuildDefaultTable() {
         sceneCell.innerHTML = `${scene.name}<button class="scene-delete-btn" onclick="deleteRow(this)">×</button>`;
         row.appendChild(sceneCell);
 
-        // Data cells
-        for (let i = 1; i < columnCount; i++) {
+        // Act summary cell (merged cells)
+        const actSummaryCell = document.createElement('td');
+        if (index === 0) { // Act 1 - first scene
+            actSummaryCell.className = 'act-summary-cell act1-summary';
+            actSummaryCell.rowSpan = 3;
+            actSummaryCell.innerHTML = 'ACT I<br>3-5 clues<br>(To establish mystery)<br><span id="act1-count">0</span> added';
+        } else if (index === 3) { // Act 2 - first scene
+            actSummaryCell.className = 'act-summary-cell act2-summary';
+            actSummaryCell.rowSpan = 3;
+            actSummaryCell.innerHTML = 'ACT II<br>8-12 clues<br>(To build complexity)<br><span id="act2-count">0</span> added';
+        } else if (index === 6) { // Act 3 - first scene
+            actSummaryCell.className = 'act-summary-cell act3-summary';
+            actSummaryCell.rowSpan = 3;
+            actSummaryCell.innerHTML = 'ACT III<br>1-3 clues<br>(Final pieces)<br><span id="act3-count">0</span> added';
+        }
+        
+        // Only add the act summary cell for the first scene of each act
+        if (index === 0 || index === 3 || index === 6) {
+            row.appendChild(actSummaryCell);
+        }
+
+        // Data cells (start from column 3 now since we added act summary)
+        for (let i = 2; i < columnCount; i++) {
             const dataCell = document.createElement('td');
             dataCell.className = 'data-cell';
             dataCell.setAttribute('data-column', i);
@@ -836,7 +926,7 @@ function rebuildDefaultTable() {
         tbody.appendChild(row);
     });
 
-    logDebug('Rebuilt default table with 9 scenes');
+    logDebug('Rebuilt default table with 9 scenes and act summaries');
 }
 
         function rebuildTableFromData(tableData) {
@@ -1172,41 +1262,68 @@ function rebuildDefaultTable() {
         }
 
         function updateAllCounts() {
-            const table = document.getElementById('outlineTable');
-            const headers = table.querySelectorAll('thead th');
+    const table = document.getElementById('outlineTable');
+    const headers = table.querySelectorAll('thead th');
+    
+    // Remove existing count row
+    const existingCountRow = table.querySelector('.count-row');
+    if (existingCountRow) {
+        existingCountRow.remove();
+    }
+    
+    // Create new count row
+    const countRow = document.createElement('tr');
+    countRow.className = 'count-row';
+    
+    // Count items by act for the act summary
+    let act1Count = 0, act2Count = 0, act3Count = 0;
+    
+    headers.forEach((header, index) => {
+        const countCell = document.createElement('td');
+        countCell.className = 'count-cell';
+        
+        if (index === 0) {
+            countCell.textContent = 'TOTALS:';
+        } else if (index === 1) {
+            countCell.textContent = 'BY ACT';
+        } else {
+            const columnCells = table.querySelectorAll(`td[data-column="${index}"]`);
+            let count = 0;
             
-            // Remove existing count row
-            const existingCountRow = table.querySelector('.count-row');
-            if (existingCountRow) {
-                existingCountRow.remove();
-            }
-            
-            // Create new count row
-            const countRow = document.createElement('tr');
-            countRow.className = 'count-row';
-            
-            headers.forEach((header, index) => {
-                const countCell = document.createElement('td');
-                countCell.className = 'count-cell';
+            columnCells.forEach(cell => {
+                const itemCount = cell.querySelectorAll('.text-item').length;
+                count += itemCount;
                 
-                if (index === 0) {
-                    countCell.textContent = 'TOTALS:';
-                } else {
-                    const columnCells = table.querySelectorAll(`td[data-column="${index}"]`);
-                    let count = 0;
-                    
-                    columnCells.forEach(cell => {
-                        count += cell.querySelectorAll('.text-item').length;
-                    });
-                    
-                    countCell.textContent = count;
+                // Add to act counts (first 2 columns are clue columns)
+                if (index <= 3) {
+                    const row = cell.closest('tr');
+                    if (row.classList.contains('act1')) {
+                        act1Count += itemCount;
+                    } else if (row.classList.contains('act2')) {
+                        act2Count += itemCount;
+                    } else if (row.classList.contains('act3')) {
+                        act3Count += itemCount;
+                    }
                 }
-                
-                countRow.appendChild(countCell);
             });
             
-            table.querySelector('tbody').appendChild(countRow);
+            countCell.textContent = count;
         }
+        
+        countRow.appendChild(countCell);
+    });
+    
+    table.querySelector('tbody').appendChild(countRow);
+    
+    // Update act summary counts
+    const act1Span = document.getElementById('act1-count');
+    const act2Span = document.getElementById('act2-count');
+    const act3Span = document.getElementById('act3-count');
+    
+    if (act1Span) act1Span.textContent = act1Count;
+    if (act2Span) act2Span.textContent = act2Count;
+    if (act3Span) act3Span.textContent = act3Count;
+}
 
         function setupTableEventListeners() {
             // Auto-save on content changes
