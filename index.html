@@ -839,6 +839,7 @@
         }
 
         function ensureFullTable() {
+    cleanupOrphanedElements(); // ADD THIS LINE
     // Make sure we have all 9 scenes visible
     const tbody = document.querySelector('#outlineTable tbody');
     const existingRows = tbody.querySelectorAll('tr:not(.count-row)');
@@ -857,6 +858,7 @@
 }
 
 function rebuildDefaultTable() {
+    cleanupOrphanedElements(); // ADD THIS LINE
     const tbody = document.querySelector('#outlineTable tbody');
     tbody.innerHTML = '';
 
@@ -966,6 +968,35 @@ function rebuildDefaultTable() {
     setupTableEventListeners();
     updateAllCounts();
     logDebug('Table rebuilt from structured data');
+}
+
+        function cleanupOrphanedElements() {
+    // Remove any stray buttons and text that got detached from the table
+    const body = document.body;
+    
+    // Find all elements after the debug section that shouldn't be there
+    const debugSection = document.querySelector('.debug-section');
+    if (debugSection) {
+        let nextElement = debugSection.nextElementSibling;
+        while (nextElement) {
+            const elementToRemove = nextElement;
+            nextElement = nextElement.nextElementSibling;
+            
+            // Remove if it's a stray button or text node that looks like scene content
+            if (elementToRemove.tagName === 'BUTTON' || 
+                (elementToRemove.textContent && elementToRemove.textContent.includes('Scene'))) {
+                elementToRemove.remove();
+            }
+        }
+    }
+    
+    // Also remove any floating add-item-btn or scene content outside the table
+    const strayButtons = document.querySelectorAll('body > .add-item-btn, body > button');
+    strayButtons.forEach(button => {
+        if (button.textContent === '+' || button.classList.contains('add-item-btn')) {
+            button.remove();
+        }
+    });
 }
 
         function addTextItemWithData(cell, content, type, columnIndex) {
