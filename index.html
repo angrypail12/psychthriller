@@ -69,6 +69,30 @@
             background-color: #e8f5e8;
             font-weight: bold;
             width: 150px;
+            position: relative;
+        }
+        
+        .scene-cell:hover .scene-delete-btn {
+            opacity: 1;
+        }
+        
+        .scene-delete-btn {
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            padding: 2px 5px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 10px;
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .scene-delete-btn:hover {
+            background-color: #cc0000;
         }
         
         .act1 { background-color: #d4f4dd; }
@@ -84,12 +108,47 @@
             background-color: #f9f9f9;
             border: 1px solid #ddd;
             border-radius: 3px;
-            padding: 4px;
-            margin: 2px 0;
+            padding: 6px 6px 25px 6px;
+            margin: 3px 0;
             cursor: text;
-            min-height: 20px;
-            font-size: 11px;
+            min-height: 25px;
+            font-size: 13px;
+            position: relative;
         }
+        
+        .item-content {
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        
+        .item-controls {
+            position: absolute;
+            bottom: 2px;
+            left: 4px;
+            right: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 9px;
+        }
+        
+        .item-type-select {
+            font-size: 9px;
+            padding: 1px 3px;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            background-color: white;
+            max-width: 120px;
+        }
+        
+        .type-major-revelation { border-left: 4px solid #ff4444; }
+        .type-minor-revelation { border-left: 4px solid #ff9999; }
+        .type-large-clue-obvious { border-left: 4px solid #4444ff; }
+        .type-large-clue-subtle { border-left: 4px solid #9999ff; }
+        .type-major-red-herring { border-left: 4px solid #ff8800; }
+        .type-minor-misdirection { border-left: 4px solid #ffaa44; }
+        .type-major-contradiction { border-left: 4px solid #8800ff; }
+        .type-minor-inconsistency { border-left: 4px solid #bb88ff; }
         
         .text-item:hover {
             background-color: #f0f0f0;
@@ -123,8 +182,6 @@
             border-radius: 2px;
             cursor: pointer;
             font-size: 9px;
-            float: right;
-            margin-left: 4px;
         }
         
         .delete-item-btn:hover {
@@ -155,6 +212,14 @@
         
         .control-btn:hover {
             background-color: #1976D2;
+        }
+        
+        .control-btn.danger {
+            background-color: #f44336;
+        }
+        
+        .control-btn.danger:hover {
+            background-color: #d32f2f;
         }
         
         .column-header {
@@ -198,8 +263,11 @@
         <div class="controls">
             <button class="control-btn" onclick="addColumn()">Add Column</button>
             <button class="control-btn" onclick="addRow()">Add Scene</button>
+            <button class="control-btn danger" onclick="deleteSelectedRow()">Delete Scene</button>
             <button class="control-btn" onclick="saveData()">Save Progress</button>
             <button class="control-btn" onclick="loadData()">Load Progress</button>
+            <button class="control-btn" onclick="exportData()">Export Data</button>
+            <button class="control-btn" onclick="importData()">Import Data</button>
         </div>
         
         <table id="outlineTable">
@@ -272,123 +340,96 @@
             <tbody>
                 <!-- Act I Scenes -->
                 <tr class="act1">
-                    <td class="scene-cell">Scene 1 (Opening Image) - 5%</td>
-                    <td class="data-cell" data-column="1"></td>
-                    <td class="data-cell" data-column="2"></td>
-                    <td class="data-cell" data-column="3"></td>
-                    <td class="data-cell" data-column="4"></td>
-                    <td class="data-cell" data-column="5"></td>
-                    <td class="data-cell" data-column="6"></td>
-                    <td class="data-cell" data-column="7"></td>
-                    <td class="data-cell" data-column="8"></td>
-                </tr>
-                <tr class="act1">
-                    <td class="scene-cell">Scene 2 (Inciting Incident) - 14%</td>
-                    <td class="data-cell" data-column="1"></td>
+                    <td class="scene-cell" contenteditable="true">
+                        Scene 1 (Opening Image) - 5%
+                        <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                    </td>
+                    <td class="data-cell" data-column="1">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
                     <td class="data-cell" data-column="2">
-                        <div class="text-item" contenteditable="true">A clue to establish mystery</div>
                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                     </td>
-                    <td class="data-cell" data-column="3"></td>
-                    <td class="data-cell" data-column="4"></td>
-                    <td class="data-cell" data-column="5"></td>
-                    <td class="data-cell" data-column="6"></td>
+                    <td class="data-cell" data-column="3">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="4">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="5">
+                        <div class="text-item type-large-clue-subtle">
+                            <div class="item-content" contenteditable="true">A clue in final pieces</div>
+                            <div class="item-controls">
+                                <select class="item-type-select" onchange="updateItemType(this)">
+                                    <option value="large-clue-obvious">Large Clue - Obvious</option>
+                                    <option value="large-clue-subtle" selected>Large Clue - Subtle</option>
+                                    <option value="major-red-herring">Major Red Herring</option>
+                                    <option value="minor-misdirection">Minor Misdirection</option>
+                                    <option value="major-revelation">Major Twist/Revelation</option>
+                                    <option value="minor-revelation">Minor Revelation</option>
+                                    <option value="major-contradiction">Major Contradiction</option>
+                                    <option value="minor-inconsistency">Minor Inconsistency</option>
+                                </select>
+                                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+                            </div>
+                        </div>
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="6">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
                     <td class="data-cell" data-column="7">
-                        <div class="text-item" contenteditable="true">We learn that the narrator has a strange father that he questions but the dad didn't help</div>
+                        <div class="text-item type-minor-revelation">
+                            <div class="item-content" contenteditable="true">We learn the daughter decided to believe it okay that her father's past crisis, because she is an the brainwashing her father</div>
+                            <div class="item-controls">
+                                <select class="item-type-select" onchange="updateItemType(this)">
+                                    <option value="large-clue-obvious">Large Clue - Obvious</option>
+                                    <option value="large-clue-subtle">Large Clue - Subtle</option>
+                                    <option value="major-red-herring">Major Red Herring</option>
+                                    <option value="minor-misdirection">Minor Misdirection</option>
+                                    <option value="major-revelation">Major Twist/Revelation</option>
+                                    <option value="minor-revelation" selected>Minor Revelation</option>
+                                    <option value="major-contradiction">Major Contradiction</option>
+                                    <option value="minor-inconsistency">Minor Inconsistency</option>
+                                </select>
+                                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+                            </div>
+                        </div>
                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                     </td>
-                    <td class="data-cell" data-column="8"></td>
+                    <td class="data-cell" data-column="8">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
                 </tr>
-                <tr class="act1">
-                    <td class="scene-cell">Scene 3 (Lock-in) - 24%</td>
-                    <td class="data-cell" data-column="1"></td>
+                <tr class="act3">
+                    <td class="scene-cell" contenteditable="true">
+                        Scene 9 (New Equilibrium) - 100%
+                        <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                    </td>
+                    <td class="data-cell" data-column="1">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
                     <td class="data-cell" data-column="2">
-                        <div class="text-item" contenteditable="true">2-3 clues to build complexity</div>
                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                     </td>
-                    <td class="data-cell" data-column="3"></td>
-                    <td class="data-cell" data-column="4"></td>
+                    <td class="data-cell" data-column="3">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="4">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
                     <td class="data-cell" data-column="5">
-                        <div class="text-item" contenteditable="true">We learn the father doesn't actually have cancer</div>
                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                     </td>
-                    <td class="data-cell" data-column="6"></td>
-                    <td class="data-cell" data-column="7"></td>
-                    <td class="data-cell" data-column="8"></td>
-                </tr>
-                <!-- Act II Scenes -->
-                <tr class="act2">
-                    <td class="scene-cell">Scene 4 (Opening First Encounters) - 40%</td>
-                    <td class="data-cell" data-column="1"></td>
-                    <td class="data-cell" data-column="2"></td>
-                    <td class="data-cell" data-column="3"></td>
-                    <td class="data-cell" data-column="4"></td>
-                    <td class="data-cell" data-column="5"></td>
-                    <td class="data-cell" data-column="6"></td>
-                    <td class="data-cell" data-column="7"></td>
-                    <td class="data-cell" data-column="8"></td>
-                </tr>
-                <tr class="act2">
-                    <td class="scene-cell">Scene 5 (Midpoint Revelation) - 57%</td>
-                    <td class="data-cell" data-column="1"></td>
-                    <td class="data-cell" data-column="2"></td>
-                    <td class="data-cell" data-column="3"></td>
-                    <td class="data-cell" data-column="4"></td>
-                    <td class="data-cell" data-column="5"></td>
-                    <td class="data-cell" data-column="6"></td>
-                    <td class="data-cell" data-column="7"></td>
-                    <td class="data-cell" data-column="8"></td>
-                </tr>
-                <tr class="act2">
-                    <td class="scene-cell">Scene 6 (Things Get Worse) - 74%</td>
-                    <td class="data-cell" data-column="1"></td>
-                    <td class="data-cell" data-column="2"></td>
-                    <td class="data-cell" data-column="3"></td>
-                    <td class="data-cell" data-column="4"></td>
-                    <td class="data-cell" data-column="5"></td>
-                    <td class="data-cell" data-column="6"></td>
-                    <td class="data-cell" data-column="7"></td>
-                    <td class="data-cell" data-column="8"></td>
-                </tr>
-                <!-- Act III Scenes -->
-                <tr class="act3">
-                    <td class="scene-cell">Scene 7 (Final Confrontation) - 85%</td>
-                    <td class="data-cell" data-column="1"></td>
-                    <td class="data-cell" data-column="2"></td>
-                    <td class="data-cell" data-column="3"></td>
-                    <td class="data-cell" data-column="4"></td>
-                    <td class="data-cell" data-column="5"></td>
-                    <td class="data-cell" data-column="6"></td>
-                    <td class="data-cell" data-column="7"></td>
-                    <td class="data-cell" data-column="8"></td>
-                </tr>
-                <tr class="act3">
-                    <td class="scene-cell">Scene 8 (Resolution of the Sin) - 93%</td>
-                    <td class="data-cell" data-column="1"></td>
-                    <td class="data-cell" data-column="2"></td>
-                    <td class="data-cell" data-column="3"></td>
-                    <td class="data-cell" data-column="4"></td>
-                    <td class="data-cell" data-column="5">
-                        <div class="text-item" contenteditable="true">A clue in final pieces</div>
+                    <td class="data-cell" data-column="6">
                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                     </td>
-                    <td class="data-cell" data-column="6"></td>
                     <td class="data-cell" data-column="7">
-                        <div class="text-item" contenteditable="true">We learn the daughter decided to believe it okay that her father's past crisis, because she is an the brainwashing her father</div>
                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                     </td>
-                    <td class="data-cell" data-column="8"></td>
-                </tr>
-                <tr class="act3">
-                    <td class="scene-cell">Scene 9 (New Equilibrium) - 100%</td>
-                    <td class="data-cell" data-column="1"></td>
-                    <td class="data-cell" data-column="2"></td>
-                    <td class="data-cell" data-column="3"></td>
-                    <td class="data-cell" data-column="4"></td>
-                    <td class="data-cell" data-column="5"></td>
-                    <td class="data-cell" data-column="6"></td>
-                    <td class="data-cell" data-column="7"></td>
-                    <td class="data-cell" data-column="8"></td>
+                    <td class="data-cell" data-column="8">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
                 </tr>
             </tbody>
             <tfoot>
@@ -431,29 +472,96 @@
             const cell = button.parentNode;
             const textItem = document.createElement('div');
             textItem.className = 'text-item';
-            textItem.contentEditable = true;
-            textItem.placeholder = 'Enter text...';
             
+            // Create content div
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'item-content';
+            contentDiv.contentEditable = true;
+            contentDiv.placeholder = 'Enter text...';
+            textItem.appendChild(contentDiv);
+            
+            // Create controls div
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'item-controls';
+            
+            // Create type selector
+            const typeSelect = document.createElement('select');
+            typeSelect.className = 'item-type-select';
+            typeSelect.onchange = function() { updateItemType(this); };
+            
+            const options = [
+                { value: 'large-clue-obvious', text: 'Large Clue - Obvious' },
+                { value: 'large-clue-subtle', text: 'Large Clue - Subtle' },
+                { value: 'major-red-herring', text: 'Major Red Herring' },
+                { value: 'minor-misdirection', text: 'Minor Misdirection' },
+                { value: 'major-revelation', text: 'Major Twist/Revelation' },
+                { value: 'minor-revelation', text: 'Minor Revelation' },
+                { value: 'major-contradiction', text: 'Major Contradiction' },
+                { value: 'minor-inconsistency', text: 'Minor Inconsistency' }
+            ];
+            
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.text;
+                typeSelect.appendChild(opt);
+            });
+            
+            controlsDiv.appendChild(typeSelect);
+            
+            // Create delete button
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-item-btn';
             deleteBtn.textContent = '×';
-            deleteBtn.onclick = function() { 
-                textItem.remove(); 
-                updateColumnCount(cell.dataset.column);
-            };
+            deleteBtn.onclick = function() { deleteTextItem(this); };
+            controlsDiv.appendChild(deleteBtn);
             
-            textItem.appendChild(deleteBtn);
+            textItem.appendChild(controlsDiv);
             
             // Add event listener for content changes
-            textItem.addEventListener('input', function() {
+            contentDiv.addEventListener('input', function() {
                 updateColumnCount(cell.dataset.column);
             });
             
             // Insert before the add button
             cell.insertBefore(textItem, button);
-            textItem.focus();
+            contentDiv.focus();
             
             updateColumnCount(cell.dataset.column);
+        }
+
+        function updateItemType(select) {
+            const textItem = select.closest('.text-item');
+            
+            // Remove all type classes
+            const typeClasses = [
+                'type-large-clue-obvious', 'type-large-clue-subtle', 
+                'type-major-red-herring', 'type-minor-misdirection',
+                'type-major-revelation', 'type-minor-revelation',
+                'type-major-contradiction', 'type-minor-inconsistency'
+            ];
+            
+            typeClasses.forEach(cls => textItem.classList.remove(cls));
+            
+            // Add new type class
+            textItem.classList.add('type-' + select.value);
+        }
+
+        function deleteTextItem(button) {
+            const textItem = button.parentNode.parentNode;
+            const cell = textItem.parentNode;
+            const columnIndex = cell.dataset.column;
+            
+            textItem.remove();
+            updateColumnCount(columnIndex);
+        }
+
+        function deleteRow(button) {
+            if (!confirm('Are you sure you want to delete this scene?')) return;
+            
+            const row = button.closest('tr');
+            row.remove();
+            updateAllCounts();
         }
 
         function updateColumnCount(columnIndex) {
@@ -539,7 +647,7 @@
             const sceneCell = document.createElement('td');
             sceneCell.className = 'scene-cell';
             sceneCell.contentEditable = true;
-            sceneCell.textContent = `New Scene - 0%`;
+            sceneCell.innerHTML = `New Scene - 0%<button class="scene-delete-btn" onclick="deleteRow(this)">×</button>`;
             newRow.appendChild(sceneCell);
             
             // Data cells
@@ -742,3 +850,279 @@
     </script>
 </body>
 </html>
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="6">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="7">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="8">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                </tr>
+                <tr class="act1">
+                    <td class="scene-cell" contenteditable="true">
+                        Scene 2 (Inciting Incident) - 14%
+                        <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                    </td>
+                    <td class="data-cell" data-column="1">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="2">
+                        <div class="text-item type-large-clue-subtle">
+                            <div class="item-content" contenteditable="true">A clue to establish mystery</div>
+                            <div class="item-controls">
+                                <select class="item-type-select" onchange="updateItemType(this)">
+                                    <option value="large-clue-obvious">Large Clue - Obvious</option>
+                                    <option value="large-clue-subtle" selected>Large Clue - Subtle</option>
+                                    <option value="major-red-herring">Major Red Herring</option>
+                                    <option value="minor-misdirection">Minor Misdirection</option>
+                                    <option value="major-revelation">Major Twist/Revelation</option>
+                                    <option value="minor-revelation">Minor Revelation</option>
+                                    <option value="major-contradiction">Major Contradiction</option>
+                                    <option value="minor-inconsistency">Minor Inconsistency</option>
+                                </select>
+                                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+                            </div>
+                        </div>
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="3">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="4">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="5">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="6">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="7">
+                        <div class="text-item type-minor-inconsistency">
+                            <div class="item-content" contenteditable="true">We learn that the narrator has a strange father that he questions but the dad didn't help</div>
+                            <div class="item-controls">
+                                <select class="item-type-select" onchange="updateItemType(this)">
+                                    <option value="large-clue-obvious">Large Clue - Obvious</option>
+                                    <option value="large-clue-subtle">Large Clue - Subtle</option>
+                                    <option value="major-red-herring">Major Red Herring</option>
+                                    <option value="minor-misdirection">Minor Misdirection</option>
+                                    <option value="major-revelation">Major Twist/Revelation</option>
+                                    <option value="minor-revelation">Minor Revelation</option>
+                                    <option value="major-contradiction">Major Contradiction</option>
+                                    <option value="minor-inconsistency" selected>Minor Inconsistency</option>
+                                </select>
+                                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+                            </div>
+                        </div>
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="8">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                </tr>
+                <tr class="act1">
+                    <td class="scene-cell" contenteditable="true">
+                        Scene 3 (Lock-in) - 24%
+                        <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                    </td>
+                    <td class="data-cell" data-column="1">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="2">
+                        <div class="text-item type-large-clue-subtle">
+                            <div class="item-content" contenteditable="true">2-3 clues to build complexity</div>
+                            <div class="item-controls">
+                                <select class="item-type-select" onchange="updateItemType(this)">
+                                    <option value="large-clue-obvious">Large Clue - Obvious</option>
+                                    <option value="large-clue-subtle" selected>Large Clue - Subtle</option>
+                                    <option value="major-red-herring">Major Red Herring</option>
+                                    <option value="minor-misdirection">Minor Misdirection</option>
+                                    <option value="major-revelation">Major Twist/Revelation</option>
+                                    <option value="minor-revelation">Minor Revelation</option>
+                                    <option value="major-contradiction">Major Contradiction</option>
+                                    <option value="minor-inconsistency">Minor Inconsistency</option>
+                                </select>
+                                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+                            </div>
+                        </div>
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="3">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="4">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="5">
+                        <div class="text-item type-major-revelation">
+                            <div class="item-content" contenteditable="true">We learn the father doesn't actually have cancer</div>
+                            <div class="item-controls">
+                                <select class="item-type-select" onchange="updateItemType(this)">
+                                    <option value="large-clue-obvious">Large Clue - Obvious</option>
+                                    <option value="large-clue-subtle">Large Clue - Subtle</option>
+                                    <option value="major-red-herring">Major Red Herring</option>
+                                    <option value="minor-misdirection">Minor Misdirection</option>
+                                    <option value="major-revelation" selected>Major Twist/Revelation</option>
+                                    <option value="minor-revelation">Minor Revelation</option>
+                                    <option value="major-contradiction">Major Contradiction</option>
+                                    <option value="minor-inconsistency">Minor Inconsistency</option>
+                                </select>
+                                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+                            </div>
+                        </div>
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="6">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="7">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="8">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                </tr>
+                <!-- Act II Scenes -->
+                <tr class="act2">
+                    <td class="scene-cell" contenteditable="true">
+                        Scene 4 (Opening First Encounters) - 40%
+                        <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                    </td>
+                    <td class="data-cell" data-column="1">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="2">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="3">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="4">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="5">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="6">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="7">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="8">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                </tr>
+                <tr class="act2">
+                    <td class="scene-cell" contenteditable="true">
+                        Scene 5 (Midpoint Revelation) - 57%
+                        <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                    </td>
+                    <td class="data-cell" data-column="1">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="2">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="3">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="4">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="5">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="6">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="7">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="8">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                </tr>
+                <tr class="act2">
+                    <td class="scene-cell" contenteditable="true">
+                        Scene 6 (Things Get Worse) - 74%
+                        <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                    </td>
+                    <td class="data-cell" data-column="1">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="2">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="3">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="4">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="5">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="6">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="7">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="8">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                </tr>
+                <!-- Act III Scenes -->
+                <tr class="act3">
+                    <td class="scene-cell" contenteditable="true">
+                        Scene 7 (Final Confrontation) - 85%
+                        <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                    </td>
+                    <td class="data-cell" data-column="1">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="2">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="3">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="4">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="5">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="6">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="7">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="8">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                </tr>
+                <tr class="act3">
+                    <td class="scene-cell" contenteditable="true">
+                        Scene 8 (Resolution of the Sin) - 93%
+                        <button class="scene-delete-btn" onclick="deleteRow(this)">×</button>
+                    </td>
+                    <td class="data-cell" data-column="1">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="2">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="3">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="4">
+                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                    </td>
+                    <td class="data-cell" data-column="5">
