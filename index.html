@@ -179,17 +179,6 @@
             font-size: 13px;
         }
 
-        .item-content {
-            flex: 1;
-            border: none;
-            background: transparent;
-            outline: none;
-            resize: none;
-            min-height: 20px;
-            font-family: inherit;
-            font-size: inherit;
-        }
-
         .item-controls {
             display: flex;
             justify-content: space-between;
@@ -329,7 +318,7 @@
     float: right; /* Right-align the buttons */
 }
 
-        /* Make text areas auto-resize to content */
+      /* Make text areas auto-resize to content */
 .item-content {
     flex: 1;
     border: none;
@@ -340,8 +329,9 @@
     height: auto; /* Allow height to adjust */
     font-family: inherit;
     font-size: inherit;
-    overflow: hidden; /* Remove scrollbars */
+    overflow: visible; /* Change from hidden to visible */
     line-height: 1.4;
+    word-wrap: break-word; /* Add this for long words */
 }
 
 /* Ensure text items expand to fit content */
