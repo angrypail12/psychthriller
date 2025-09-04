@@ -916,6 +916,12 @@ function rebuildDefaultTable() {
 
     // Rebuild rows from data
     tableData.rows.forEach(rowData => {
+        // Safety check for each row
+        if (!rowData || !rowData.scene) {
+            logDebug('Invalid row data - skipping');
+            return;
+        }
+
         const row = document.createElement('tr');
         row.className = rowData.actClass || 'act2';
         
@@ -926,17 +932,21 @@ function rebuildDefaultTable() {
         sceneCell.innerHTML = `${rowData.scene}<button class="scene-delete-btn" onclick="deleteRow(this)">×</button>`;
         row.appendChild(sceneCell);
 
-        // Data cells
-        const expectedColumns = Math.max(8, rowData.columns.length); // Ensure at least 8 columns
+        // Data cells - ADD SAFETY CHECK HERE
+        const columns = rowData.columns || []; // Default to empty array if undefined
+        const expectedColumns = Math.max(8, columns.length);
+        
         for (let i = 0; i < expectedColumns; i++) {
             const dataCell = document.createElement('td');
             dataCell.className = 'data-cell';
             dataCell.setAttribute('data-column', i + 1);
             
-            // Add text items if they exist
-            if (i < rowData.columns.length && rowData.columns[i]) {
-                rowData.columns[i].forEach(itemData => {
-                    addTextItemWithData(dataCell, itemData.content, itemData.type, i + 1);
+            // Add text items if they exist - SAFETY CHECK
+            if (i < columns.length && Array.isArray(columns[i])) {
+                columns[i].forEach(itemData => {
+                    if (itemData && itemData.content) {
+                        addTextItemWithData(dataCell, itemData.content, itemData.type, i + 1);
+                    }
                 });
             }
 
@@ -955,6 +965,7 @@ function rebuildDefaultTable() {
 
     setupTableEventListeners();
     updateAllCounts();
+    logDebug('Table rebuilt from structured data');
 }
 
         function addTextItemWithData(cell, content, type, columnIndex) {
