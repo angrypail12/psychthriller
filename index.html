@@ -971,10 +971,7 @@ function rebuildDefaultTable() {
 }
 
         function cleanupOrphanedElements() {
-    // Remove any stray buttons and text that got detached from the table
-    const body = document.body;
-    
-    // Find all elements after the debug section that shouldn't be there
+    // Remove any stray elements that got detached from the table
     const debugSection = document.querySelector('.debug-section');
     if (debugSection) {
         let nextElement = debugSection.nextElementSibling;
@@ -982,21 +979,34 @@ function rebuildDefaultTable() {
             const elementToRemove = nextElement;
             nextElement = nextElement.nextElementSibling;
             
-            // Remove if it's a stray button or text node that looks like scene content
-            if (elementToRemove.tagName === 'BUTTON' || 
-                (elementToRemove.textContent && elementToRemove.textContent.includes('Scene'))) {
-                elementToRemove.remove();
-            }
+            // Remove any element after the debug section that shouldn't be there
+            // This includes buttons, text nodes, and any orphaned content
+            elementToRemove.remove();
         }
     }
     
-    // Also remove any floating add-item-btn or scene content outside the table
-    const strayButtons = document.querySelectorAll('body > .add-item-btn, body > button');
-    strayButtons.forEach(button => {
-        if (button.textContent === '+' || button.classList.contains('add-item-btn')) {
-            button.remove();
+    // Also remove any floating elements that might be direct children of body
+    // but aren't part of the main structure
+    const body = document.body;
+    const validElements = ['authContainer', 'appContainer'];
+    
+    Array.from(body.children).forEach(child => {
+        // Keep only the main containers and script tags
+        if (!validElements.includes(child.id) && 
+            child.tagName !== 'SCRIPT' && 
+            !child.classList.contains('debug-section')) {
+            
+            // Check if it's an orphaned element (like stray buttons or text)
+            if (child.tagName === 'BUTTON' || 
+                (child.textContent && child.textContent.includes('Scene')) ||
+                child.classList.contains('add-item-btn') ||
+                child.textContent.includes('%')) {
+                child.remove();
+            }
         }
     });
+    
+    logDebug('Cleaned up orphaned elements');
 }
 
         function addTextItemWithData(cell, content, type, columnIndex) {
