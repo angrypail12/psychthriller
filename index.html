@@ -1316,7 +1316,7 @@ function rebuildDefaultTable() {
     const countRow = document.createElement('tr');
     countRow.className = 'count-row';
     
-    // Count items by act for the act summary (include both clue columns)
+    // Count items by act for the act summary
     let act1Count = 0, act2Count = 0, act3Count = 0;
     
     headers.forEach((header, index) => {
@@ -1334,24 +1334,32 @@ function rebuildDefaultTable() {
             columnCells.forEach(cell => {
                 const itemCount = cell.querySelectorAll('.text-item').length;
                 count += itemCount;
-                
-                // Add to act counts (columns 2 and 3 are both clue columns)
-                if (index === 2 || index === 3) { // Both Obvious and Subtle clue columns
-                    const row = cell.closest('tr');
-                    if (row.classList.contains('act1')) {
-                        act1Count += itemCount;
-                    } else if (row.classList.contains('act2')) {
-                        act2Count += itemCount;
-                    } else if (row.classList.contains('act3')) {
-                        act3Count += itemCount;
-                    }
-                }
             });
             
             countCell.textContent = count;
         }
         
         countRow.appendChild(countCell);
+    });
+    
+    // Separately count clues for act summaries
+    // Count from data-column 2 (Obvious), 3 (Subtle), and 4 (Major Red Herrings)
+    const clueColumns = [2, 3, 4]; // The data-column values for clue-related columns
+    
+    clueColumns.forEach(columnNum => {
+        const columnCells = table.querySelectorAll(`td[data-column="${columnNum}"]`);
+        columnCells.forEach(cell => {
+            const itemCount = cell.querySelectorAll('.text-item').length;
+            const row = cell.closest('tr');
+            
+            if (row.classList.contains('act1')) {
+                act1Count += itemCount;
+            } else if (row.classList.contains('act2')) {
+                act2Count += itemCount;
+            } else if (row.classList.contains('act3')) {
+                act3Count += itemCount;
+            }
+        });
     });
     
     table.querySelector('tbody').appendChild(countRow);
