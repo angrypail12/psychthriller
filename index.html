@@ -149,6 +149,22 @@
         .type-minor-misdirection { border-left: 4px solid #ffaa44; }
         .type-major-contradiction { border-left: 4px solid #8800ff; }
         .type-minor-inconsistency { border-left: 4px solid #bb88ff; }
+        .type-false-suspect { border-left: 4px solid #ff8800; }
+.type-misleading-motivation { border-left: 4px solid #ff6600; }
+.type-wrong-interpretation { border-left: 4px solid #ff4400; }
+.type-misleading-dialogue { border-left: 4px solid #ffaa44; }
+.type-coincidence { border-left: 4px solid #ffcc66; }
+.type-character-behavior { border-left: 4px solid #ff9944; }
+.type-major-revelation { border-left: 4px solid #ff4444; }
+.type-character-backstory { border-left: 4px solid #ff9999; }
+.type-relationship-truth { border-left: 4px solid #ffaaaa; }
+.type-small-mystery { border-left: 4px solid #ff7777; }
+.type-memory-error { border-left: 4px solid #8800ff; }
+.type-relationship-lie { border-left: 4px solid #9933ff; }
+.type-misperception { border-left: 4px solid #aa44ff; }
+.type-timeline-error { border-left: 4px solid #bb88ff; }
+.type-emotional-contradiction { border-left: 4px solid #ccaaff; }
+.type-detail-inconsistency { border-left: 4px solid #dd99ff; }
         
         .text-item:hover {
             background-color: #f0f0f0;
@@ -720,7 +736,7 @@
     </div>
 
     <script>
-        // Initialize the table and add necessary event listeners
+       // Initialize the table and add necessary event listeners
         document.addEventListener('DOMContentLoaded', function() {
             updateAllCounts();
             addTextItemsToEmptyCells();
@@ -741,6 +757,7 @@
 
         function addTextItem(button) {
             const cell = button.parentNode;
+            const columnIndex = parseInt(cell.dataset.column);
             const textItem = document.createElement('div');
             textItem.className = 'text-item';
             
@@ -755,30 +772,69 @@
             const controlsDiv = document.createElement('div');
             controlsDiv.className = 'item-controls';
             
-            // Create type selector
-            const typeSelect = document.createElement('select');
-            typeSelect.className = 'item-type-select';
-            typeSelect.onchange = function() { updateItemType(this); };
-            
-            const options = [
-                { value: 'large-clue-obvious', text: 'Large Clue - Obvious' },
-                { value: 'large-clue-subtle', text: 'Large Clue - Subtle' },
-                { value: 'major-red-herring', text: 'Major Red Herring' },
-                { value: 'minor-misdirection', text: 'Minor Misdirection' },
-                { value: 'major-revelation', text: 'Major Twist/Revelation' },
-                { value: 'minor-revelation', text: 'Minor Revelation' },
-                { value: 'major-contradiction', text: 'Major Contradiction' },
-                { value: 'minor-inconsistency', text: 'Minor Inconsistency' }
-            ];
-            
-            options.forEach(option => {
-                const opt = document.createElement('option');
-                opt.value = option.value;
-                opt.textContent = option.text;
-                typeSelect.appendChild(opt);
-            });
-            
-            controlsDiv.appendChild(typeSelect);
+            // Only add type selector for columns that need it (not clue columns)
+            if (columnIndex >= 3) { // Columns 3+ need type selectors
+                const typeSelect = document.createElement('select');
+                typeSelect.className = 'item-type-select';
+                typeSelect.onchange = function() { updateItemType(this); };
+                
+                let options = [];
+                
+                // Column-specific options
+                switch (columnIndex) {
+                    case 3: // Major Red Herrings/Misdirection
+                        options = [
+                            { value: 'false-suspect', text: 'False Suspect' },
+                            { value: 'misleading-motivation', text: 'Misleading Motivation' },
+                            { value: 'wrong-interpretation', text: 'Wrong Interpretation of Evidence' }
+                        ];
+                        break;
+                    case 4: // Minor Misdirection
+                        options = [
+                            { value: 'misleading-dialogue', text: 'Misleading Dialogue' },
+                            { value: 'coincidence', text: 'Coincidence that Suggests Wrong Conclusion' },
+                            { value: 'character-behavior', text: 'Character Behavior that Implies False Things' }
+                        ];
+                        break;
+                    case 5: // Major Twist/Revelation
+                        options = [
+                            { value: 'major-revelation', text: 'Major Twist/Revelation' }
+                        ];
+                        break;
+                    case 6: // Minor Revelations/Other Information
+                        options = [
+                            { value: 'character-backstory', text: 'Character Backstory Reveal' },
+                            { value: 'relationship-truth', text: 'Relationship Truth' },
+                            { value: 'small-mystery', text: 'Small Mystery Solution' }
+                        ];
+                        break;
+                    case 7: // Major Contradictions/Inconsistencies
+                        options = [
+                            { value: 'memory-error', text: 'Memory "Error" about Key Events' },
+                            { value: 'relationship-lie', text: 'Lie about Relationships/Past' },
+                            { value: 'misperception', text: 'Misperception about Current Events' }
+                        ];
+                        break;
+                    case 8: // Minor Inconsistencies
+                        options = [
+                            { value: 'timeline-error', text: 'Small Timeline Error' },
+                            { value: 'emotional-contradiction', text: 'Emotional Contradiction' },
+                            { value: 'detail-inconsistency', text: 'Details that Don\'t Add Up' }
+                        ];
+                        break;
+                    default:
+                        options = [{ value: 'general', text: 'General' }];
+                }
+                
+                options.forEach(option => {
+                    const opt = document.createElement('option');
+                    opt.value = option.value;
+                    opt.textContent = option.text;
+                    typeSelect.appendChild(opt);
+                });
+                
+                controlsDiv.appendChild(typeSelect);
+            }
             
             // Create delete button
             const deleteBtn = document.createElement('button');
@@ -806,10 +862,12 @@
             
             // Remove all type classes
             const typeClasses = [
-                'type-large-clue-obvious', 'type-large-clue-subtle', 
-                'type-major-red-herring', 'type-minor-misdirection',
-                'type-major-revelation', 'type-minor-revelation',
-                'type-major-contradiction', 'type-minor-inconsistency'
+                'type-false-suspect', 'type-misleading-motivation', 'type-wrong-interpretation',
+                'type-misleading-dialogue', 'type-coincidence', 'type-character-behavior',
+                'type-major-revelation', 'type-character-backstory', 'type-relationship-truth',
+                'type-small-mystery', 'type-memory-error', 'type-relationship-lie',
+                'type-misperception', 'type-timeline-error', 'type-emotional-contradiction',
+                'type-detail-inconsistency'
             ];
             
             typeClasses.forEach(cls => textItem.classList.remove(cls));
