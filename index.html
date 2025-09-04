@@ -1031,30 +1031,37 @@
         }
 
         function saveData() {
-            const data = {
-                title: document.querySelector('.editable-title').value,
-                table: document.getElementById('outlineTable').outerHTML
-            };
-            
-            // Save to localStorage (browser storage)
-            localStorage.setItem('thrillerOutline', JSON.stringify(data));
-            
-            // Also create downloadable backup
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(dataBlob);
-            
-            // Auto-download backup file
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'thriller-outline-backup-' + new Date().toISOString().slice(0,10) + '.json';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            alert('Progress saved to browser AND downloaded as backup file!');
-        }
+    const data = {
+        title: document.querySelector('.editable-title').value,
+        table: document.getElementById('outlineTable').outerHTML
+    };
+    
+    // Save to localStorage (browser storage)
+    localStorage.setItem('thrillerOutline', JSON.stringify(data));
+    
+    // Use a different approach for Arc Browser
+    const dataStr = JSON.stringify(data, null, 2);
+    const filename = 'thriller-outline-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    
+    // Try the standard method first
+    try {
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        alert('Progress saved to browser storage. Download should start automatically.');
+    } catch (error) {
+        // Fallback for Arc Browser
+        fallbackDownload(dataStr, filename);
+    }
+}
 
         function loadData() {
             const saved = localStorage.getItem('thrillerOutline');
@@ -1076,26 +1083,40 @@
         }
 
         function exportData() {
-            const data = {
-                title: document.querySelector('.editable-title').value,
-                table: document.getElementById('outlineTable').outerHTML,
-                exportDate: new Date().toISOString()
-            };
-            
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(dataBlob);
-            
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'thriller-outline-export-' + new Date().toISOString().slice(0,10) + '.json';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            alert('Data exported successfully!');
-        }
+    const data = {
+        title: document.querySelector('.editable-title').value,
+        table: document.getElementById('outlineTable').outerHTML,
+        exportDate: new Date().toISOString()
+    };
+    
+    const dataStr = JSON.stringify(data, null, 2);
+    const filename = 'thriller-outline-export-' + new Date().toISOString().slice(0,10) + '.json';
+    
+    fallbackDownload(dataStr, filename);
+}
+
+function fallbackDownload(content, filename) {
+    // Create a new window/tab with the content
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(`
+        <html>
+        <head><title>Save Your Data</title></head>
+        <body style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>Your Thriller Outline Data</h2>
+            <p>Copy the text below and save it as: <strong>${filename}</strong></p>
+            <textarea style="width: 100%; height: 400px; font-family: monospace;" readonly>${content}</textarea>
+            <p><strong>Instructions:</strong></p>
+            <ol>
+                <li>Select all text in the box above (Ctrl+A or Cmd+A)</li>
+                <li>Copy it (Ctrl+C or Cmd+C)</li>
+                <li>Open a text editor</li>
+                <li>Paste the content</li>
+                <li>Save as "${filename}"</li>
+            </ol>
+        </body>
+        </html>
+    `);
+}
 
         function importData() {
             const input = document.createElement('input');
