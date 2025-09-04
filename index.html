@@ -1162,38 +1162,48 @@ function autoResizeTextarea(textarea) {
 
         // Table manipulation functions
         function addTextItem(button) {
-            const cell = button.parentNode;
-            const columnIndex = parseInt(cell.dataset.column);
-            const textItem = document.createElement('div');
-            textItem.className = 'text-item';
+    const cell = button.parentNode;
+    const columnIndex = parseInt(cell.dataset.column);
+    const textItem = document.createElement('div');
+    textItem.className = 'text-item';
 
-            const options = getOptionsForColumn(columnIndex);
+    const options = getOptionsForColumn(columnIndex);
 
-            if (options.length > 1) {
-                textItem.innerHTML = `
-                    <textarea class="item-content" placeholder="Enter your item..."></textarea>
-                    <div class="item-controls">
-                        <select class="type-select" onchange="updateItemType(this)">
-                            ${options.map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('')}
-                        </select>
-                        <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
-                    </div>
-                `;
-            } else {
-                textItem.innerHTML = `
-                    <textarea class="item-content" placeholder="Enter your item..."></textarea>
-                    <div class="item-controls">
-                        <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
-                    </div>
-                `;
-            }
+    if (options.length > 1) {
+        textItem.innerHTML = `
+            <textarea class="item-content" placeholder="Enter your item..."></textarea>
+            <div class="item-controls">
+                <select class="type-select" onchange="updateItemType(this)">
+                    ${options.map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('')}
+                </select>
+                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+            </div>
+        `;
+    } else {
+        textItem.innerHTML = `
+            <textarea class="item-content" placeholder="Enter your item..."></textarea>
+            <div class="item-controls">
+                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+            </div>
+        `;
+    }
 
-            cell.insertBefore(textItem, button);
-            updateAllCounts();
-            scheduleAutoSave();
-            
-            logDebug('Added text item to column ' + columnIndex);
-        }
+    cell.insertBefore(textItem, button);
+    
+    // Auto-resize the new textarea
+    const textarea = textItem.querySelector('.item-content');
+    autoResizeTextarea(textarea);
+    
+    // Add event listener for future typing
+    textarea.addEventListener('input', function() {
+        autoResizeTextarea(this);
+    });
+    
+    updateAllCounts();
+    scheduleAutoSave();
+    
+    logDebug('Added text item to column ' + columnIndex);
+}
 
         function deleteTextItem(button) {
             const textItem = button.closest('.text-item');
