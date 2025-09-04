@@ -324,20 +324,6 @@
                         </div>
                     </th>
                     <th class="column-header">
-                        Major Twist/Revelation (2-3 MAX)
-                        <div class="header-controls">
-                            <button class="header-btn" onclick="editColumnHeader(this)">✎</button>
-                            <button class="header-btn" onclick="deleteColumn(this)">✗</button>
-                        </div>
-                    </th>
-                    <th class="column-header">
-                        Other minor/minor Revelations (8-12) (7 max)
-                        <div class="header-controls">
-                            <button class="header-btn" onclick="editColumnHeader(this)">✎</button>
-                            <button class="header-btn" onclick="deleteColumn(this)">✗</button>
-                        </div>
-                    </th>
-                    <th class="column-header">
                         Major Contradictions/Inconsistencies from Unreliable Narr (5-8)
                         <div class="header-controls">
                             <button class="header-btn" onclick="editColumnHeader(this)">✎</button>
@@ -346,6 +332,20 @@
                     </th>
                     <th class="column-header">
                         Minor inconsistencies from Unreliable Narr (10-15)
+                        <div class="header-controls">
+                            <button class="header-btn" onclick="editColumnHeader(this)">✎</button>
+                            <button class="header-btn" onclick="deleteColumn(this)">✗</button>
+                        </div>
+                    </th>
+                    <th class="column-header">
+                        Major Twist/Revelation (2-3 MAX)
+                        <div class="header-controls">
+                            <button class="header-btn" onclick="editColumnHeader(this)">✎</button>
+                            <button class="header-btn" onclick="deleteColumn(this)">✗</button>
+                        </div>
+                    </th>
+                    <th class="column-header">
+                        Other minor/minor Revelations (8-12) (7 max)
                         <div class="header-controls">
                             <button class="header-btn" onclick="editColumnHeader(this)">✎</button>
                             <button class="header-btn" onclick="deleteColumn(this)">✗</button>
@@ -481,23 +481,7 @@
                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                     </td>
                     <td class="data-cell" data-column="5">
-                        <div class="text-item type-major-revelation">
-                            <div class="item-content" contenteditable="true">We learn the father doesn't actually have cancer</div>
-                            <div class="item-controls">
-                                <select class="item-type-select" onchange="updateItemType(this)">
-                                    <option value="large-clue-obvious">Large Clue - Obvious</option>
-                                    <option value="large-clue-subtle">Large Clue - Subtle</option>
-                                    <option value="major-red-herring">Major Red Herring</option>
-                                    <option value="minor-misdirection">Minor Misdirection</option>
-                                    <option value="major-revelation" selected>Major Twist/Revelation</option>
-                                    <option value="minor-revelation">Minor Revelation</option>
-                                    <option value="major-contradiction">Major Contradiction</option>
-                                    <option value="minor-inconsistency">Minor Inconsistency</option>
-                                </select>
-                                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
-                            </div>
-                        </div>
-                        <button class="add-item-btn" onclick="addTextItem(this)">+</button>
+                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                     </td>
                     <td class="data-cell" data-column="6">
                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
@@ -649,22 +633,6 @@
                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                     </td>
                     <td class="data-cell" data-column="5">
-                        <div class="text-item type-large-clue-subtle">
-                            <div class="item-content" contenteditable="true">A clue in final pieces</div>
-                            <div class="item-controls">
-                                <select class="item-type-select" onchange="updateItemType(this)">
-                                    <option value="large-clue-obvious">Large Clue - Obvious</option>
-                                    <option value="large-clue-subtle" selected>Large Clue - Subtle</option>
-                                    <option value="major-red-herring">Major Red Herring</option>
-                                    <option value="minor-misdirection">Minor Misdirection</option>
-                                    <option value="major-revelation">Major Twist/Revelation</option>
-                                    <option value="minor-revelation">Minor Revelation</option>
-                                    <option value="major-contradiction">Major Contradiction</option>
-                                    <option value="minor-inconsistency">Minor Inconsistency</option>
-                                </select>
-                                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
-                            </div>
-                        </div>
                         <button class="add-item-btn" onclick="addTextItem(this)">+</button>
                     </td>
                     <td class="data-cell" data-column="6">
@@ -782,49 +750,49 @@
                 
                 // Column-specific options
                 switch (columnIndex) {
-                    case 3: // Major Red Herrings/Misdirection
-                        options = [
-                            { value: 'false-suspect', text: 'False Suspect' },
-                            { value: 'misleading-motivation', text: 'Misleading Motivation' },
-                            { value: 'wrong-interpretation', text: 'Wrong Interpretation of Evidence' }
-                        ];
-                        break;
-                    case 4: // Minor Misdirection
-                        options = [
-                            { value: 'misleading-dialogue', text: 'Misleading Dialogue' },
-                            { value: 'coincidence', text: 'Coincidence that Suggests Wrong Conclusion' },
-                            { value: 'character-behavior', text: 'Character Behavior that Implies False Things' }
-                        ];
-                        break;
-                    case 5: // Major Twist/Revelation
-                        options = [
-                            { value: 'major-revelation', text: 'Major Twist/Revelation' }
-                        ];
-                        break;
-                    case 6: // Minor Revelations/Other Information
-                        options = [
-                            { value: 'character-backstory', text: 'Character Backstory Reveal' },
-                            { value: 'relationship-truth', text: 'Relationship Truth' },
-                            { value: 'small-mystery', text: 'Small Mystery Solution' }
-                        ];
-                        break;
-                    case 7: // Major Contradictions/Inconsistencies
-                        options = [
-                            { value: 'memory-error', text: 'Memory "Error" about Key Events' },
-                            { value: 'relationship-lie', text: 'Lie about Relationships/Past' },
-                            { value: 'misperception', text: 'Misperception about Current Events' }
-                        ];
-                        break;
-                    case 8: // Minor Inconsistencies
-                        options = [
-                            { value: 'timeline-error', text: 'Small Timeline Error' },
-                            { value: 'emotional-contradiction', text: 'Emotional Contradiction' },
-                            { value: 'detail-inconsistency', text: 'Details that Don\'t Add Up' }
-                        ];
-                        break;
-                    default:
-                        options = [{ value: 'general', text: 'General' }];
-                }
+    case 3: // Major Red Herrings/Misdirection
+        options = [
+            { value: 'false-suspect', text: 'False Suspect' },
+            { value: 'misleading-motivation', text: 'Misleading Motivation' },
+            { value: 'wrong-interpretation', text: 'Wrong Interpretation of Evidence' }
+        ];
+        break;
+    case 4: // Minor Misdirection
+        options = [
+            { value: 'misleading-dialogue', text: 'Misleading Dialogue' },
+            { value: 'coincidence', text: 'Coincidence that Suggests Wrong Conclusion' },
+            { value: 'character-behavior', text: 'Character Behavior that Implies False Things' }
+        ];
+        break;
+    case 5: // Major Contradictions/Inconsistencies
+        options = [
+            { value: 'memory-error', text: 'Memory "Error" about Key Events' },
+            { value: 'relationship-lie', text: 'Lie about Relationships/Past' },
+            { value: 'misperception', text: 'Misperception about Current Events' }
+        ];
+        break;
+    case 6: // Minor Inconsistencies
+        options = [
+            { value: 'timeline-error', text: 'Small Timeline Error' },
+            { value: 'emotional-contradiction', text: 'Emotional Contradiction' },
+            { value: 'detail-inconsistency', text: 'Details that Don\'t Add Up' }
+        ];
+        break;
+    case 7: // Major Twist/Revelation (moved to end)
+        options = [
+            { value: 'major-revelation', text: 'Major Twist/Revelation' }
+        ];
+        break;
+    case 8: // Minor Revelations/Other Information (moved to end)
+        options = [
+            { value: 'character-backstory', text: 'Character Backstory Reveal' },
+            { value: 'relationship-truth', text: 'Relationship Truth' },
+            { value: 'small-mystery', text: 'Small Mystery Solution' }
+        ];
+        break;
+    default:
+        options = [{ value: 'general', text: 'General' }];
+}
                 
                 options.forEach(option => {
                     const opt = document.createElement('option');
