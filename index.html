@@ -329,6 +329,35 @@
     float: right; /* Right-align the buttons */
 }
 
+        /* Make text areas auto-resize to content */
+.item-content {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    resize: none;
+    min-height: 20px;
+    height: auto; /* Allow height to adjust */
+    font-family: inherit;
+    font-size: inherit;
+    overflow: hidden; /* Remove scrollbars */
+    line-height: 1.4;
+}
+
+/* Ensure text items expand to fit content */
+.text-item {
+    margin-bottom: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    background-color: #fafafa;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 13px;
+    min-height: auto; /* Remove fixed height constraint */
+}
+
 .act1-summary { border-left-color: #10b981; background-color: #d1fae5 !important; }
 .act2-summary { border-left-color: #f59e0b; background-color: #fef3c7 !important; }
 .act3-summary { border-left-color: #ef4444; background-color: #fee2e2 !important; }
@@ -1038,6 +1067,12 @@ function rebuildDefaultTable() {
     logDebug('Table rebuilt from structured data');
 }
 
+        // Auto-resize textarea to fit content
+function autoResizeTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+}
+
         function addTextItemWithData(cell, content, type, columnIndex) {
             const textItem = document.createElement('div');
             textItem.className = 'text-item';
@@ -1072,7 +1107,16 @@ function rebuildDefaultTable() {
             }
 
             const addButton = cell.querySelector('.add-item-btn');
-            cell.insertBefore(textItem, addButton);
+    cell.insertBefore(textItem, addButton);
+    
+    // Auto-resize the textarea after adding
+    const textarea = textItem.querySelector('.item-content');
+    autoResizeTextarea(textarea);
+    
+    // Add event listener for future typing
+    textarea.addEventListener('input', function() {
+        autoResizeTextarea(this);
+    });
         }
 
         function getOptionsForColumn(columnIndex) {
@@ -1375,18 +1419,28 @@ function rebuildDefaultTable() {
 }
 
         function setupTableEventListeners() {
-            // Auto-save on content changes
-            document.addEventListener('input', function(e) {
-                if (e.target.classList.contains('item-content') || 
-                    e.target.id === 'bookTitle' || 
-                    e.target.classList.contains('scene-cell')) {
-                    scheduleAutoSave();
-                }
-            });
-            
-            updateAllCounts();
-            logDebug('Table event listeners set up');
+    // Auto-save on content changes and auto-resize textareas
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('item-content')) {
+            autoResizeTextarea(e.target);
+            scheduleAutoSave();
+        } else if (e.target.id === 'bookTitle' || 
+                   e.target.classList.contains('scene-cell')) {
+            scheduleAutoSave();
         }
+    });
+    
+    // Auto-resize all existing textareas
+    document.querySelectorAll('.item-content').forEach(textarea => {
+        autoResizeTextarea(textarea);
+        textarea.addEventListener('input', function() {
+            autoResizeTextarea(this);
+        });
+    });
+    
+    updateAllCounts();
+    logDebug('Table event listeners set up');
+}
 
         function exportData() {
             const data = {
