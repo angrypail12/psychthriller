@@ -465,7 +465,8 @@
             cells.forEach(cell => {
                 const textItems = cell.querySelectorAll('.text-item');
                 textItems.forEach(item => {
-                    if (item.textContent.trim() !== '' && item.textContent.trim() !== '×') {
+                    const content = item.querySelector('.item-content');
+                    if (content && content.textContent.trim() !== '') {
                         count++;
                     }
                 });
