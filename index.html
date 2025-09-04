@@ -1277,9 +1277,11 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             logDebug('DOM loaded - initializing app');
-            setupTableEventListeners();
             
-            // Auto-save every 30 seconds if logged in
+            // Ensure the table has all 9 scenes on initial load
+            ensureFullTable();
+            
+            // Auto-save every 30 seconds if we have a user (real or anonymous)
             setInterval(() => {
                 if (currentUser && document.getElementById('bookTitle').value.trim()) {
                     logDebug('Periodic auto-save triggered');
