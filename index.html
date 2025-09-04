@@ -325,14 +325,15 @@
     background: transparent;
     outline: none;
     resize: none;
-    min-height: 20px;
+    min-height: 40px;
+    max-height: 120px;
     font-family: inherit;
     font-size: inherit;
     line-height: 1.4;
     word-wrap: break-word;
     box-sizing: border-box;
     width: 100%;
-    overflow-y: hidden;
+    overflow-y: auto;
     overflow-x: hidden;
 }
 
@@ -1059,12 +1060,6 @@ function rebuildDefaultTable() {
     logDebug('Table rebuilt from structured data');
 }
 
-        // Auto-resize textarea to fit content
-function autoResizeTextarea(textarea) {
-    textarea.style.height = 'auto';
-    textarea.style.height = textarea.scrollHeight + 'px';
-}
-
         function addTextItemWithData(cell, content, type, columnIndex) {
             const textItem = document.createElement('div');
             textItem.className = 'text-item';
@@ -1100,15 +1095,6 @@ function autoResizeTextarea(textarea) {
 
             const addButton = cell.querySelector('.add-item-btn');
     cell.insertBefore(textItem, addButton);
-    
-    // Auto-resize the textarea after adding
-    const textarea = textItem.querySelector('.item-content');
-    autoResizeTextarea(textarea);
-    
-    // Add event listener for future typing
-    textarea.addEventListener('input', function() {
-        autoResizeTextarea(this);
-    });
         }
 
         function getOptionsForColumn(columnIndex) {
@@ -1181,15 +1167,6 @@ function autoResizeTextarea(textarea) {
     }
 
     cell.insertBefore(textItem, button);
-    
-    // Auto-resize the new textarea
-    const textarea = textItem.querySelector('.item-content');
-    autoResizeTextarea(textarea);
-    
-    // Add event listener for future typing
-    textarea.addEventListener('input', function() {
-        autoResizeTextarea(this);
-    });
     
     updateAllCounts();
     scheduleAutoSave();
@@ -1421,26 +1398,15 @@ function autoResizeTextarea(textarea) {
 }
 
         function setupTableEventListeners() {
-    // Auto-save on content changes and auto-resize textareas
+    // Auto-save on content changes
     document.addEventListener('input', function(e) {
         if (e.target.classList.contains('item-content')) {
-            autoResizeTextarea(e.target);
             scheduleAutoSave();
         } else if (e.target.id === 'bookTitle' || 
                    e.target.classList.contains('scene-cell')) {
             scheduleAutoSave();
         }
     });
-    
-    // Auto-resize all existing textareas (with a small delay to ensure DOM is ready)
-    setTimeout(() => {
-        document.querySelectorAll('.item-content').forEach(textarea => {
-            autoResizeTextarea(textarea);
-            textarea.addEventListener('input', function() {
-                autoResizeTextarea(this);
-            });
-        });
-    }, 100);
     
     updateAllCounts();
     logDebug('Table event listeners set up');
