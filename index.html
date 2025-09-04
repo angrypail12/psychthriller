@@ -1036,31 +1036,10 @@
         table: document.getElementById('outlineTable').outerHTML
     };
     
-    // Save to localStorage (browser storage)
+    // Only save to localStorage - no download attempt
     localStorage.setItem('thrillerOutline', JSON.stringify(data));
     
-    // Use a different approach for Arc Browser
-    const dataStr = JSON.stringify(data, null, 2);
-    const filename = 'thriller-outline-backup-' + new Date().toISOString().slice(0,10) + '.json';
-    
-    // Try the standard method first
-    try {
-        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        alert('Progress saved to browser storage. Download should start automatically.');
-    } catch (error) {
-        // Fallback for Arc Browser
-        fallbackDownload(dataStr, filename);
-    }
+    alert('Progress saved to browser storage successfully!');
 }
 
         function loadData() {
