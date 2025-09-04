@@ -309,6 +309,26 @@
     vertical-align: middle;
 }
 
+        /* Fix data cell backgrounds - remove blue background */
+.data-cell {
+    min-height: 80px;
+    position: relative;
+    background-color: white !important;
+}
+
+/* Right-align add buttons */
+.add-item-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    margin: 5px;
+    float: right; /* Right-align the buttons */
+}
+
 .act1-summary { border-left-color: #10b981; background-color: #d1fae5 !important; }
 .act2-summary { border-left-color: #f59e0b; background-color: #fef3c7 !important; }
 .act3-summary { border-left-color: #ef4444; background-color: #fee2e2 !important; }
@@ -1296,7 +1316,7 @@ function rebuildDefaultTable() {
     const countRow = document.createElement('tr');
     countRow.className = 'count-row';
     
-    // Count items by act for the act summary
+    // Count items by act for the act summary (include both clue columns)
     let act1Count = 0, act2Count = 0, act3Count = 0;
     
     headers.forEach((header, index) => {
@@ -1315,8 +1335,8 @@ function rebuildDefaultTable() {
                 const itemCount = cell.querySelectorAll('.text-item').length;
                 count += itemCount;
                 
-                // Add to act counts (first 2 columns are clue columns)
-                if (index <= 3) {
+                // Add to act counts (columns 2 and 3 are both clue columns)
+                if (index === 2 || index === 3) { // Both Obvious and Subtle clue columns
                     const row = cell.closest('tr');
                     if (row.classList.contains('act1')) {
                         act1Count += itemCount;
