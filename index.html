@@ -298,6 +298,35 @@
     vertical-align: middle;
 }
 
+        /* Make data columns equal width */
+.outline-table th:nth-child(n+3),
+.outline-table td:nth-child(n+3) {
+    width: 12.5%; /* 8 columns = 100% / 8 = 12.5% each */
+    min-width: 150px; /* Minimum width to ensure readability */
+    max-width: 200px; /* Maximum width to prevent excessive expansion */
+}
+
+/* Allow header text to wrap */
+.outline-table th {
+    white-space: normal;
+    word-wrap: break-word;
+    vertical-align: top;
+    line-height: 1.2;
+}
+
+/* Ensure the scenes and act summary columns stay their current size */
+.outline-table th:nth-child(1),
+.outline-table td:nth-child(1) {
+    width: 120px;
+    min-width: 120px;
+}
+
+.outline-table th:nth-child(2),
+.outline-table td:nth-child(2) {
+    width: 100px;
+    min-width: 100px;
+}
+
         /* Fix data cell backgrounds - remove blue background */
 .data-cell {
     min-height: 80px;
