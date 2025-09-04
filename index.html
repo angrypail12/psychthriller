@@ -901,6 +901,18 @@ function rebuildDefaultTable() {
 }
 
         function rebuildTableFromData(tableData) {
+    const table = document.getElementById('outlineTable');
+    const tbody = table.querySelector('tbody');
+    
+    // SAFETY CHECK - Add this section
+    if (!tableData || !tableData.rows || !Array.isArray(tableData.rows)) {
+        logDebug('Invalid table data structure - using default table');
+        rebuildDefaultTable();
+        return;
+    }
+    
+    // Clear existing rows
+    tbody.innerHTML = '';
             const table = document.getElementById('outlineTable');
             const tbody = table.querySelector('tbody');
             
