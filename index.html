@@ -329,9 +329,10 @@
     height: auto; /* Allow height to adjust */
     font-family: inherit;
     font-size: inherit;
-    overflow: visible; /* Change from hidden to visible */
+    overflow: hidden; /* Keep this as hidden to prevent scrollbars */
     line-height: 1.4;
-    word-wrap: break-word; /* Add this for long words */
+    word-wrap: break-word;
+    box-sizing: border-box; /* Add this */
 }
 
 /* Ensure text items expand to fit content */
@@ -1430,13 +1431,15 @@ function autoResizeTextarea(textarea) {
         }
     });
     
-    // Auto-resize all existing textareas
-    document.querySelectorAll('.item-content').forEach(textarea => {
-        autoResizeTextarea(textarea);
-        textarea.addEventListener('input', function() {
-            autoResizeTextarea(this);
+    // Auto-resize all existing textareas (with a small delay to ensure DOM is ready)
+    setTimeout(() => {
+        document.querySelectorAll('.item-content').forEach(textarea => {
+            autoResizeTextarea(textarea);
+            textarea.addEventListener('input', function() {
+                autoResizeTextarea(this);
+            });
         });
-    });
+    }, 100);
     
     updateAllCounts();
     logDebug('Table event listeners set up');
