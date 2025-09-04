@@ -559,14 +559,14 @@
     <script>
         // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyCsP9DDFsCCjC-1EpA8uzeRhWUfFrQ8-Zo",
-            authDomain: "jedi-8ce49.firebaseapp.com",
-            databaseURL: "https://jedi-8ce49-default-rtdb.firebaseio.com/",
-            projectId: "jedi-8ce49",
-            storageBucket: "jedi-8ce49.firebasestorage.app",
-            messagingSenderId: "1001546846157",
-            appId: "1:1001546846157:web:328f6ef11b9e32fbe7be84"
-        };
+    apiKey: "AIzaSyD74wPC0oyB8jnS3rPgkfa6szzyBPLrbfg",
+    authDomain: "thriller-table.firebaseapp.com",
+    databaseURL: "https://thriller-table-default-rtdb.firebaseio.com",
+    projectId: "thriller-table",
+    storageBucket: "thriller-table.firebasestorage.app",
+    messagingSenderId: "737792309009",
+    appId: "1:737792309009:web:fa0238f531befc33143eb0"
+};
 
         // Global variables
         let currentUser = null;
@@ -837,6 +837,68 @@
                     hideLoading();
                 });
         }
+
+        function ensureFullTable() {
+    // Make sure we have all 9 scenes visible
+    const tbody = document.querySelector('#outlineTable tbody');
+    const existingRows = tbody.querySelectorAll('tr:not(.count-row)');
+    
+    logDebug('Current table has ' + existingRows.length + ' scene rows');
+    
+    // If we don't have all 9 scenes, the table got corrupted somehow
+    // Let's rebuild it from scratch
+    if (existingRows.length !== 9) {
+        logDebug('Table corrupted - rebuilding all 9 scenes');
+        rebuildDefaultTable();
+    }
+    
+    setupTableEventListeners();
+    updateAllCounts();
+}
+
+function rebuildDefaultTable() {
+    const tbody = document.querySelector('#outlineTable tbody');
+    tbody.innerHTML = '';
+
+    const defaultScenes = [
+        { name: 'Scene 1 (Opening Image) - 6%', class: 'act1' },
+        { name: 'Scene 2 (Inciting Incident) - 16%', class: 'act1' },
+        { name: 'Scene 3 (Lock-In) - 25%', class: 'act1' },
+        { name: 'Scene 4 (First Encounters) - 37%', class: 'act2' },
+        { name: 'Scene 5 (Midpoint Revelation) - 50%', class: 'act2' },
+        { name: 'Scene 6 (Things Get Worse) - 75%', class: 'act2' },
+        { name: 'Scene 7 (Final Confrontation) - 87%', class: 'act3' },
+        { name: 'Scene 8 (Resolution of the Sin) - 93%', class: 'act3' },
+        { name: 'Scene 9 (New Equilibrium) - 100%', class: 'act3' }
+    ];
+
+    const columnCount = document.querySelectorAll('#outlineTable thead th').length;
+
+    defaultScenes.forEach(scene => {
+        const row = document.createElement('tr');
+        row.className = scene.class;
+
+        // Scene cell
+        const sceneCell = document.createElement('td');
+        sceneCell.className = 'scene-cell';
+        sceneCell.contentEditable = true;
+        sceneCell.innerHTML = `${scene.name}<button class="scene-delete-btn" onclick="deleteRow(this)">×</button>`;
+        row.appendChild(sceneCell);
+
+        // Data cells
+        for (let i = 1; i < columnCount; i++) {
+            const dataCell = document.createElement('td');
+            dataCell.className = 'data-cell';
+            dataCell.setAttribute('data-column', i);
+            dataCell.innerHTML = '<button class="add-item-btn" onclick="addTextItem(this)">+</button>';
+            row.appendChild(dataCell);
+        }
+
+        tbody.appendChild(row);
+    });
+
+    logDebug('Rebuilt default table with 9 scenes');
+}
 
         function rebuildTableFromData(tableData) {
             const table = document.getElementById('outlineTable');
