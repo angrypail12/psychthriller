@@ -904,7 +904,7 @@ function rebuildDefaultTable() {
     const table = document.getElementById('outlineTable');
     const tbody = table.querySelector('tbody');
     
-    // SAFETY CHECK - Add this section
+    // Safety check for invalid data structure
     if (!tableData || !tableData.rows || !Array.isArray(tableData.rows)) {
         logDebug('Invalid table data structure - using default table');
         rebuildDefaultTable();
@@ -913,54 +913,49 @@ function rebuildDefaultTable() {
     
     // Clear existing rows
     tbody.innerHTML = '';
-            const table = document.getElementById('outlineTable');
-            const tbody = table.querySelector('tbody');
+
+    // Rebuild rows from data
+    tableData.rows.forEach(rowData => {
+        const row = document.createElement('tr');
+        row.className = rowData.actClass || 'act2';
+        
+        // Scene cell
+        const sceneCell = document.createElement('td');
+        sceneCell.className = 'scene-cell';
+        sceneCell.contentEditable = true;
+        sceneCell.innerHTML = `${rowData.scene}<button class="scene-delete-btn" onclick="deleteRow(this)">×</button>`;
+        row.appendChild(sceneCell);
+
+        // Data cells
+        const expectedColumns = Math.max(8, rowData.columns.length); // Ensure at least 8 columns
+        for (let i = 0; i < expectedColumns; i++) {
+            const dataCell = document.createElement('td');
+            dataCell.className = 'data-cell';
+            dataCell.setAttribute('data-column', i + 1);
             
-            // Clear existing rows
-            tbody.innerHTML = '';
+            // Add text items if they exist
+            if (i < rowData.columns.length && rowData.columns[i]) {
+                rowData.columns[i].forEach(itemData => {
+                    addTextItemWithData(dataCell, itemData.content, itemData.type, i + 1);
+                });
+            }
 
-            // Rebuild rows from data
-            tableData.rows.forEach(rowData => {
-                const row = document.createElement('tr');
-                row.className = rowData.actClass || 'act2';
-                
-                // Scene cell
-                const sceneCell = document.createElement('td');
-                sceneCell.className = 'scene-cell';
-                sceneCell.contentEditable = true;
-                sceneCell.innerHTML = `${rowData.scene}<button class="scene-delete-btn" onclick="deleteRow(this)">×</button>`;
-                row.appendChild(sceneCell);
+            // Add the + button
+            const addButton = document.createElement('button');
+            addButton.className = 'add-item-btn';
+            addButton.textContent = '+';
+            addButton.onclick = function() { addTextItem(this); };
+            dataCell.appendChild(addButton);
 
-                // Data cells
-                const expectedColumns = Math.max(8, rowData.columns.length); // Ensure at least 8 columns
-                for (let i = 0; i < expectedColumns; i++) {
-                    const dataCell = document.createElement('td');
-                    dataCell.className = 'data-cell';
-                    dataCell.setAttribute('data-column', i + 1);
-                    
-                    // Add text items if they exist
-                    if (i < rowData.columns.length && rowData.columns[i]) {
-                        rowData.columns[i].forEach(itemData => {
-                            addTextItemWithData(dataCell, itemData.content, itemData.type, i + 1);
-                        });
-                    }
-
-                    // Add the + button
-                    const addButton = document.createElement('button');
-                    addButton.className = 'add-item-btn';
-                    addButton.textContent = '+';
-                    addButton.onclick = function() { addTextItem(this); };
-                    dataCell.appendChild(addButton);
-
-                    row.appendChild(dataCell);
-                }
-
-                tbody.appendChild(row);
-            });
-
-            setupTableEventListeners();
-            updateAllCounts();
+            row.appendChild(dataCell);
         }
+
+        tbody.appendChild(row);
+    });
+
+    setupTableEventListeners();
+    updateAllCounts();
+}
 
         function addTextItemWithData(cell, content, type, columnIndex) {
             const textItem = document.createElement('div');
