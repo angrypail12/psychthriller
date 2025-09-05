@@ -1023,10 +1023,18 @@
                 logDebug('Data contains ' + (data.tableData?.rows?.length || 0) + ' rows');
                 
                 // Set title
-                document.getElementById('bookTitle').value = data.title || 'Untitled Thriller';
+document.getElementById('bookTitle').value = data.title || 'Untitled Thriller';
 
-                // Load title ideas
-loadTitleIdeas(data.titleIdeas);
+// Load title ideas separately (they're stored in a different Firebase location)
+firebase.database().ref(`thriller-outlines/${currentUser.uid}/titleIdeas`).once('value')
+    .then(snapshot => {
+        const titleIdeas = snapshot.val();
+        loadTitleIdeas(titleIdeas);
+    })
+    .catch(error => {
+        logDebug('Error loading title ideas: ' + error.message);
+        loadTitleIdeas([]); // Load empty if error
+    });
                 
                 // Load table data
                 if (data.tableData && data.tableData.rows && data.tableData.rows.length > 0) {
