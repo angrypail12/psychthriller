@@ -512,7 +512,7 @@
     <button class="btn btn-primary" onclick="addColumn()">Add Column</button>
     <button class="btn btn-primary" onclick="addScene()">Add Scene</button>
     <button class="btn btn-primary" onclick="forceSave()">Save Now</button> 
-    <button class="btn btn-secondary" onclick="exportDataToConsole()">Backup to Console</button>
+    <button class="btn btn-secondary" onclick="exportDataToText()">Backup to Text</button>
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
     <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import Data</button>
 </div>
@@ -1236,15 +1236,27 @@ function rebuildDefaultTable() {
     saveData();
 }
 
-        function exportDataToConsole() {
+        function exportDataToText() {
     const data = {
         title: document.getElementById('bookTitle').value,
         tableData: extractTableData(),
         exportDate: new Date().toISOString()
     };
-    console.log('BACKUP DATA - Copy this entire object:');
-    console.log(JSON.stringify(data, null, 2));
-    alert('Check the browser console (F12) for your backup data');
+    
+    const jsonText = JSON.stringify(data, null, 2);
+    
+    // Create a popup window with the JSON text
+    const popup = window.open('', 'backup', 'width=600,height=400,scrollbars=yes');
+    popup.document.write(`
+        <html>
+        <head><title>Thriller Outline Backup</title></head>
+        <body>
+            <h3>Copy this text and save as a .json file:</h3>
+            <textarea style="width:100%; height:300px; font-family:monospace;">${jsonText}</textarea>
+            <p>Select all text above (Ctrl+A), copy (Ctrl+C), then paste into a text file and save with .json extension</p>
+        </body>
+        </html>
+    `);
 }
 
         function updateItemType(select) {
