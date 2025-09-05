@@ -51,13 +51,22 @@
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-        }
+    max-width: none; /* Remove the 1400px constraint */
+    width: 100vw; /* Use full viewport width */
+    margin: 0;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-x: auto; /* Allow horizontal scrolling if needed */
+}
+
+/* Add a wrapper for the table to handle overflow better */
+.table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
 
         .title-section {
             margin-bottom: 20px;
@@ -183,6 +192,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            min-height: 20px; /* Ensure minimum height for controls */
         }
 
         .type-select {
@@ -201,6 +211,9 @@
             padding: 2px 6px;
             cursor: pointer;
             font-size: 11px;
+            position: relative; /* Add this */
+            z-index: 1; /* Add this */
+            flex-shrink: 0; /* Prevent button from shrinking */
         }
 
         .add-item-btn {
@@ -285,6 +298,7 @@
     font-weight: 600;
     font-size: 11px;
     vertical-align: middle;
+    box-sizing: border-box;
 }
 
 /* Act summary styling */
@@ -323,8 +337,8 @@
 
 .outline-table th:nth-child(2),
 .outline-table td:nth-child(2) {
-    width: 100px;
-    min-width: 100px;
+    width: 80px;
+    min-width: 80px;
 }
 
         /* Fix data cell backgrounds - remove blue background */
@@ -544,18 +558,19 @@
             </div>
 
             <div class="controls">
-                <button class="btn btn-primary" onclick="addColumn()">Add Column</button>
-                <button class="btn btn-primary" onclick="addScene()">Add Scene</button>
-                <button class="btn btn-secondary" onclick="exportData()">Export Data</button>
-                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
-                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import Data</button>
-            </div>
+    <button class="btn btn-primary" onclick="addColumn()">Add Column</button>
+    <button class="btn btn-primary" onclick="addScene()">Add Scene</button>
+    <button class="btn btn-secondary" onclick="exportData()">Export Data</button>
+    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import Data</button>
+</div>
 
-            <table class="outline-table" id="outlineTable">
-                <thead>
-                    <tr>
-                        <th>Scenes</th>
-                        <th class="act-summary-header">Act Summary</th>
+<div class="table-wrapper">
+    <table class="outline-table" id="outlineTable">
+        <thead>
+            <tr>
+                <th>Scenes</th>
+                <th class="act-summary-header">Act Summary</th>
                         <th class="column-header">
                             Legit Clues - Obvious (4-5 total)
                             <div class="header-controls">
@@ -613,14 +628,15 @@
                             </div>
                         </th>
                     </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
 
-            <div class="controls">
-                <p>Count totals will appear here automatically</p>
-            </div>
+<div class="controls">
+    <p>Count totals will appear here automatically</p>
+</div>
         </div>
 
         <!-- Debug Section -->
