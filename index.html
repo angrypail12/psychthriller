@@ -1033,9 +1033,11 @@ function rebuildDefaultTable() {
     tableData.rows.forEach((rowData, index) => {
         // Safety check for each row
         if (!rowData || !rowData.scene) {
-            logDebug('Invalid row data - skipping');
+            logDebug('Invalid row data - skipping row ' + index);
             return;
         }
+
+        logDebug('Processing row ' + index + ': ' + rowData.scene + ', columns: ' + (rowData.columns ? rowData.columns.length : 'undefined'));
 
         const row = document.createElement('tr');
         row.className = rowData.actClass || 'act2';
@@ -1068,20 +1070,23 @@ function rebuildDefaultTable() {
             row.appendChild(actSummaryCell);
         }
 
-        // Data cells - FIXED COLUMN INDEXING
+        // Data cells - ENSURE WE CREATE THE RIGHT NUMBER OF COLUMNS
         const columns = rowData.columns || [];
-        const expectedColumns = Math.max(8, columns.length);
+        const totalHeaders = document.querySelectorAll('#outlineTable thead th').length;
+        const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary columns
         
-        for (let i = 0; i < expectedColumns; i++) {
+        logDebug('Row ' + index + ' - Expected data columns: ' + expectedDataColumns + ', saved columns: ' + columns.length);
+        
+        for (let i = 0; i < expectedDataColumns; i++) {
             const dataCell = document.createElement('td');
             dataCell.className = 'data-cell';
-            dataCell.setAttribute('data-column', i + 3); // Start from column 3 (after scenes and act summary)
+            dataCell.setAttribute('data-column', i + 2); // Start from column 2
             
-            // Add text items if they exist
+            // Add text items if they exist in saved data
             if (i < columns.length && Array.isArray(columns[i])) {
                 columns[i].forEach(itemData => {
                     if (itemData && itemData.content) {
-                        addTextItemWithData(dataCell, itemData.content, itemData.type, i + 3);
+                        addTextItemWithData(dataCell, itemData.content, itemData.type, i + 2);
                     }
                 });
             }
@@ -1096,6 +1101,7 @@ function rebuildDefaultTable() {
             row.appendChild(dataCell);
         }
 
+        logDebug('Row ' + index + ' created with ' + row.children.length + ' total cells');
         tbody.appendChild(row);
     });
 
