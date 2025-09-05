@@ -465,6 +465,73 @@
             border-radius: 4px;
             margin-top: 10px;
         }
+
+        /* Title ideas section */
+.title-ideas-section {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.title-ideas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.title-ideas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.title-idea-item {
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.title-idea-text {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 14px;
+    padding: 5px;
+}
+
+.delete-title-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+.add-title-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.add-title-btn:hover {
+    background: #2563eb;
+}
     </style>
 </head>
 <body>
@@ -591,6 +658,17 @@
 </div>
         </div>
 
+<!-- Title Ideas Section -->
+        <div class="title-ideas-section">
+            <div class="title-ideas-header">
+                <h3>Title Ideas</h3>
+                <button class="add-title-btn" onclick="addTitleIdea()">Add Title</button>
+            </div>
+            <div class="title-ideas-grid" id="titleIdeasGrid">
+                <!-- Title ideas will be added here -->
+            </div>
+        </div>
+        
         <!-- Debug Section -->
         <div class="debug-section">
             <h3>Debug Log</h3>
@@ -896,6 +974,9 @@
                 
                 // Set title
                 document.getElementById('bookTitle').value = data.title || 'Untitled Thriller';
+
+                // Load title ideas
+loadTitleIdeas(data.titleIdeas);
                 
                 // Load table data
                 if (data.tableData && data.tableData.rows && data.tableData.rows.length > 0) {
@@ -1602,6 +1683,61 @@ const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary
                 }
             }, 30000);
         });
+        // Title ideas functions
+function addTitleIdea() {
+    const grid = document.getElementById('titleIdeasGrid');
+    const titleItem = document.createElement('div');
+    titleItem.className = 'title-idea-item';
+    
+    titleItem.innerHTML = `
+        <input type="text" class="title-idea-text" placeholder="Enter title idea..." oninput="saveTitleIdeas()">
+        <button class="delete-title-btn" onclick="deleteTitleIdea(this)">×</button>
+    `;
+    
+    grid.appendChild(titleItem);
+    saveTitleIdeas();
+}
+
+function deleteTitleIdea(button) {
+    const titleItem = button.closest('.title-idea-item');
+    titleItem.remove();
+    saveTitleIdeas();
+}
+
+function saveTitleIdeas() {
+    if (!currentUser) return;
+    
+    const titleInputs = document.querySelectorAll('.title-idea-text');
+    const titles = Array.from(titleInputs).map(input => input.value.trim()).filter(title => title !== '');
+    
+    firebase.database().ref(`thriller-outlines/${currentUser.uid}/titleIdeas`).set(titles)
+        .then(() => {
+            logDebug('Title ideas saved: ' + titles.length + ' titles');
+        })
+        .catch(error => {
+            logDebug('Error saving title ideas: ' + error.message);
+        });
+}
+
+function loadTitleIdeas(titleIdeas) {
+    const grid = document.getElementById('titleIdeasGrid');
+    grid.innerHTML = '';
+    
+    if (titleIdeas && titleIdeas.length > 0) {
+        titleIdeas.forEach(title => {
+            const titleItem = document.createElement('div');
+            titleItem.className = 'title-idea-item';
+            
+            titleItem.innerHTML = `
+                <input type="text" class="title-idea-text" value="${title}" oninput="saveTitleIdeas()">
+                <button class="delete-title-btn" onclick="deleteTitleIdea(this)">×</button>
+            `;
+            
+            grid.appendChild(titleItem);
+        });
+        logDebug('Loaded ' + titleIdeas.length + ' title ideas');
+    }
+}
     </script>
 </body>
 </html>
