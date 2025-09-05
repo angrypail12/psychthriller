@@ -833,58 +833,68 @@
 }
 
         function extractTableData() {
-            const table = document.getElementById('outlineTable');
-            const rows = table.querySelectorAll('tbody tr:not(.count-row)');
-            const headers = Array.from(table.querySelectorAll('thead th')).map(th => {
-                const text = th.childNodes[0] ? th.childNodes[0].textContent : th.textContent;
-                return text.trim();
-            });
+    const table = document.getElementById('outlineTable');
+    const rows = table.querySelectorAll('tbody tr:not(.count-row)');
+    const headers = Array.from(table.querySelectorAll('thead th')).map(th => {
+        const text = th.childNodes[0] ? th.childNodes[0].textContent : th.textContent;
+        return text.trim();
+    });
 
-            const extractedData = {
-                headers: headers,
-                rows: []
-            };
+    const extractedData = {
+        headers: headers,
+        rows: []
+    };
 
-            rows.forEach((row, rowIndex) => {
-                const cells = row.querySelectorAll('td');
-                const sceneCell = cells[0];
-                const sceneText = sceneCell.childNodes[0] ? sceneCell.childNodes[0].textContent.trim() : sceneCell.textContent.trim();
+    rows.forEach((row, rowIndex) => {
+        const cells = row.querySelectorAll('td');
+        const sceneCell = cells[0];
+        const sceneText = sceneCell.childNodes[0] ? sceneCell.childNodes[0].textContent.trim() : sceneCell.textContent.trim();
+        
+        const rowData = {
+            scene: sceneText,
+            actClass: row.className,
+            columns: []
+        };
+
+        // Process data columns - SKIP both scene column (0) AND act summary column (1)
+        // Start from cell index 2 for data columns
+        let dataColumnIndex = 0;
+        for (let i = 2; i < cells.length; i++) { 
+            const cell = cells[i];
+            
+            // Skip act summary cells (they have the act-summary-cell class)
+            if (cell.classList.contains('act-summary-cell')) {
+                continue;
+            }
+            
+            const textItems = cell.querySelectorAll('.text-item');
+            const columnData = [];
+
+            textItems.forEach(item => {
+                const contentEl = item.querySelector('.item-content');
+                const typeSelect = item.querySelector('.type-select');
                 
-                const rowData = {
-                    scene: sceneText,
-                    actClass: row.className,
-                    columns: []
-                };
-
-                // Process data columns (skip scene column)
-                for (let i = 1; i < cells.length; i++) {
-                    const cell = cells[i];
-                    const textItems = cell.querySelectorAll('.text-item');
-                    const columnData = [];
-
-                    textItems.forEach(item => {
-                        const contentEl = item.querySelector('.item-content');
-                        const typeSelect = item.querySelector('.type-select');
-                        
-                        const content = contentEl ? (contentEl.value || contentEl.textContent || '') : '';
-                        const type = typeSelect ? typeSelect.value : '';
-                        
-                        if (content.trim()) {
-                            columnData.push({
-                                content: content.trim(),
-                                type: type
-                            });
-                        }
+                const content = contentEl ? (contentEl.value || contentEl.textContent || '') : '';
+                const type = typeSelect ? typeSelect.value : '';
+                
+                if (content.trim()) {
+                    columnData.push({
+                        content: content.trim(),
+                        type: type
                     });
-
-                    rowData.columns.push(columnData);
                 }
-
-                extractedData.rows.push(rowData);
             });
 
-            return extractedData;
+            rowData.columns.push(columnData);
+            dataColumnIndex++;
         }
+
+        logDebug(`Extracting row ${rowIndex}: ${sceneText}, found ${rowData.columns.length} data columns`);
+        extractedData.rows.push(rowData);
+    });
+
+    return extractedData;
+}
 
         function loadData() {
     if (!currentUser) return;
