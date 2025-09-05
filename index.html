@@ -1159,35 +1159,35 @@ function rebuildDefaultTable() {
 
         function getOptionsForColumn(columnIndex) {
     switch (columnIndex) {
-        case 5: // Major Red Herrings/Misdirection (was 3, now 5 due to act summary column)
+        case 4: // Major Red Herrings/Misdirection (was 5)
             return [
                 { value: 'false-suspect', text: 'False Suspect' },
                 { value: 'misleading-motivation', text: 'Misleading Motivation' },
                 { value: 'wrong-interpretation', text: 'Wrong Interpretation of Evidence' }
             ];
-        case 6: // Minor Misdirection (was 4, now 6)
+        case 5: // Minor Misdirection (was 6)
             return [
                 { value: 'misleading-dialogue', text: 'Misleading Dialogue' },
                 { value: 'coincidence', text: 'Coincidence that Suggests Wrong Conclusion' },
                 { value: 'character-behavior', text: 'Character Behavior that Implies False Things' }
             ];
-        case 7: // Major Contradictions/Inconsistencies (was 5, now 7)
+        case 6: // Major Contradictions/Inconsistencies (was 7)
             return [
                 { value: 'memory-error', text: 'Memory "Error" about Key Events' },
                 { value: 'relationship-lie', text: 'Lie about Relationships/Past' },
                 { value: 'misperception', text: 'Misperception about Current Events' }
             ];
-        case 8: // Minor Inconsistencies (was 6, now 8)
+        case 7: // Minor Inconsistencies (was 8)
             return [
                 { value: 'timeline-error', text: 'Small Timeline Error' },
                 { value: 'emotional-contradiction', text: 'Emotional Contradiction' },
                 { value: 'detail-inconsistency', text: 'Details that Don\'t Add Up' }
             ];
-        case 9: // Major Twist/Revelation (was 7, now 9)
+        case 8: // Major Twist/Revelation (was 9)
             return [
                 { value: 'major-revelation', text: 'Major Twist/Revelation' }
             ];
-        case 10: // Minor Revelations/Other Information (was 8, now 10)
+        case 9: // Minor Revelations/Other Information (was 10)
             return [
                 { value: 'character-backstory', text: 'Character Backstory Reveal' },
                 { value: 'relationship-truth', text: 'Relationship Truth' },
