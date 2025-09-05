@@ -856,38 +856,44 @@
             columns: []
         };
 
-        // Process data columns - SKIP both scene column (0) AND act summary column (1)
-        // Start from cell index 2 for data columns
-        let dataColumnIndex = 0;
-        for (let i = 2; i < cells.length; i++) { 
-            const cell = cells[i];
+        // Process ONLY data cells - skip scenes (index 0) and any act summary cells
+        // Look for cells with data-column attribute starting from 2
+        const dataCells = row.querySelectorAll('td[data-column]');
+        
+        dataCells.forEach(cell => {
+            const columnIndex = parseInt(cell.getAttribute('data-column'));
             
-            // Skip act summary cells (they have the act-summary-cell class)
-            if (cell.classList.contains('act-summary-cell')) {
-                continue;
-            }
-            
-            const textItems = cell.querySelectorAll('.text-item');
-            const columnData = [];
+            // Only process data columns (2 and above)
+            if (columnIndex >= 2) {
+                const textItems = cell.querySelectorAll('.text-item');
+                const columnData = [];
 
-            textItems.forEach(item => {
-                const contentEl = item.querySelector('.item-content');
-                const typeSelect = item.querySelector('.type-select');
+                textItems.forEach(item => {
+                    const contentEl = item.querySelector('.item-content');
+                    const typeSelect = item.querySelector('.type-select');
+                    
+                    const content = contentEl ? (contentEl.value || contentEl.textContent || '') : '';
+                    const type = typeSelect ? typeSelect.value : '';
+                    
+                    if (content.trim()) {
+                        columnData.push({
+                            content: content.trim(),
+                            type: type
+                        });
+                    }
+                });
+
+                // Make sure we have the right index in the columns array
+                const arrayIndex = columnIndex - 2; // Convert column index to array index
                 
-                const content = contentEl ? (contentEl.value || contentEl.textContent || '') : '';
-                const type = typeSelect ? typeSelect.value : '';
-                
-                if (content.trim()) {
-                    columnData.push({
-                        content: content.trim(),
-                        type: type
-                    });
+                // Ensure the array is long enough
+                while (rowData.columns.length <= arrayIndex) {
+                    rowData.columns.push([]);
                 }
-            });
-
-            rowData.columns.push(columnData);
-            dataColumnIndex++;
-        }
+                
+                rowData.columns[arrayIndex] = columnData;
+            }
+        });
 
         logDebug(`Extracting row ${rowIndex}: ${sceneText}, found ${rowData.columns.length} data columns`);
         extractedData.rows.push(rowData);
