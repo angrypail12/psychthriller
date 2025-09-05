@@ -1030,10 +1030,12 @@ logDebug('Attempting to load title ideas from Firebase...');
 firebase.database().ref(`thriller-outlines/${currentUser.uid}/titleIdeas`).once('value')
     .then(snapshot => {
         const titleIdeas = snapshot.val();
+        logDebug('Title ideas Firebase response: ' + JSON.stringify(titleIdeas));
         loadTitleIdeas(titleIdeas);
     })
     .catch(error => {
         logDebug('Error loading title ideas: ' + error.message);
+        logDebug('Error details: ' + JSON.stringify(error));
         loadTitleIdeas([]); // Load empty if error
     });
                 
@@ -1887,6 +1889,13 @@ function saveTitleIdeas() {
     firebase.database().ref(`thriller-outlines/${currentUser.uid}/titleIdeas`).set(titles.length > 0 ? titles : [])
         .then(() => {
             logDebug('Title ideas saved successfully: ' + titles.length + ' titles');
+            
+            // Immediately verify the save worked
+            return firebase.database().ref(`thriller-outlines/${currentUser.uid}/titleIdeas`).once('value');
+        })
+        .then(snapshot => {
+            const savedData = snapshot.val();
+            logDebug('Verification read: ' + JSON.stringify(savedData));
         })
         .catch(error => {
             logDebug('Error saving title ideas: ' + error.message);
