@@ -1070,10 +1070,21 @@ logDebug('Processing row ' + index + ': ' + rowData.scene + ', columns: ' + (row
             row.appendChild(actSummaryCell);
         }
 
-        // Data cells - ENSURE WE CREATE THE RIGHT NUMBER OF COLUMNS
-        const columns = rowData.columns || [];
-        const totalHeaders = document.querySelectorAll('#outlineTable thead th').length;
-        const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary columns
+        // Data cells - HANDLE BOTH ARRAY AND OBJECT FORMATS
+let columns = rowData.columns || [];
+
+// Convert object format back to array (Firebase converts sparse arrays to objects)
+if (columns && typeof columns === 'object' && !Array.isArray(columns)) {
+    logDebug('Converting object columns back to array for row ' + index);
+    const arrayColumns = [];
+    for (let i = 0; i < 8; i++) {
+        arrayColumns[i] = columns[i.toString()] || [];
+    }
+    columns = arrayColumns;
+}
+
+const totalHeaders = document.querySelectorAll('#outlineTable thead th').length;
+const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary columns
         
         logDebug('Row ' + index + ' - Expected data columns: ' + expectedDataColumns + ', saved columns: ' + columns.length);
         
