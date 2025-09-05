@@ -1873,14 +1873,20 @@ function insertDropIndicator(targetItem, position) {
 }
 
 function saveTitleIdeas() {
-    if (!currentUser) return;
+    if (!currentUser) {
+        logDebug('Cannot save title ideas - no user logged in');
+        return;
+    }
     
     const titleInputs = document.querySelectorAll('.title-idea-text');
     const titles = Array.from(titleInputs).map(input => input.value.trim()).filter(title => title !== '');
     
-    firebase.database().ref(`thriller-outlines/${currentUser.uid}/titleIdeas`).set(titles)
+    logDebug('Saving title ideas: ' + JSON.stringify(titles));
+    
+    // Save even if empty array (Firebase needs explicit data)
+    firebase.database().ref(`thriller-outlines/${currentUser.uid}/titleIdeas`).set(titles.length > 0 ? titles : [])
         .then(() => {
-            logDebug('Title ideas saved: ' + titles.length + ' titles');
+            logDebug('Title ideas saved successfully: ' + titles.length + ' titles');
         })
         .catch(error => {
             logDebug('Error saving title ideas: ' + error.message);
