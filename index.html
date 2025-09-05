@@ -732,6 +732,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-database-compat.js"></script>
 
     <script>
+        let isDragging = false;
         // Firebase configuration
         const firebaseConfig = {
     apiKey: "AIzaSyD74wPC0oyB8jnS3rPgkfa6szzyBPLrbfg",
@@ -1767,10 +1768,24 @@ function createTitleItem(title, rank) {
     `;
     
     // Add drag event listeners
-    titleItem.addEventListener('dragstart', handleDragStart);
-    titleItem.addEventListener('dragover', handleDragOver);
-    titleItem.addEventListener('drop', handleDrop);
-    titleItem.addEventListener('dragend', handleDragEnd);
+titleItem.addEventListener('dragstart', (e) => {
+    isDragging = true;
+    handleDragStart(e);
+});
+titleItem.addEventListener('dragover', handleDragOver);
+titleItem.addEventListener('drop', (e) => {
+    handleDrop(e);
+    setTimeout(() => {
+        isDragging = false;
+        saveTitleIdeas(); // Save after drag is complete
+    }, 100);
+});
+titleItem.addEventListener('dragend', (e) => {
+    handleDragEnd(e);
+    setTimeout(() => {
+        isDragging = false;
+    }, 100);
+});
     
     return titleItem;
 }
@@ -1869,8 +1884,9 @@ function insertDropIndicator(targetItem, position) {
 }
 
 function saveTitleIdeas() {
-    if (!currentUser) {
-        logDebug('Cannot save title ideas - no user logged in');
+    if (!currentUser || isDragging) {
+        if (isDragging) logDebug('Skipping save during drag operation');
+        if (!currentUser) logDebug('Cannot save title ideas - no user logged in');
         return;
     }
     
