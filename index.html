@@ -534,6 +534,7 @@
             <div class="controls">
     <button class="btn btn-primary" onclick="addColumn()">Add Column</button>
     <button class="btn btn-primary" onclick="addScene()">Add Scene</button>
+    <button class="btn btn-primary" onclick="forceSave()">Save Now</button>            
     <button class="btn btn-secondary" onclick="exportData()">Export Data</button>
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
     <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import Data</button>
@@ -773,45 +774,63 @@
 
         // Data functions
         function saveData() {
-            if (!currentUser) {
-                logDebug('Cannot save - no user logged in');
-                return;
-            }
+    if (!currentUser) {
+        logDebug('Cannot save - no user logged in');
+        return;
+    }
 
-            try {
-                logDebug('Starting data save...');
-                const tableData = extractTableData();
-                
-                const data = {
-                    title: document.getElementById('bookTitle').value || 'Untitled Thriller',
-                    tableData: tableData,
-                    lastUpdated: new Date().toISOString()
-                };
-
-                logDebug('Extracted data - rows: ' + tableData.rows.length);
-
-                firebase.database().ref(`thriller-outlines/${currentUser.uid}`).set(data)
-                    .then(() => {
-                        firebaseStatus.textContent = 'Firebase: Saved ✓';
-                        firebaseStatus.classList.remove('error');
-                        logDebug('Data saved successfully');
-                        setTimeout(() => {
-                            if (firebaseStatus.textContent === 'Firebase: Saved ✓') {
-                                firebaseStatus.textContent = 'Firebase: Connected';
-                            }
-                        }, 2000);
-                    })
-                    .catch(error => {
-                        logDebug('Save error: ' + error.message);
-                        firebaseStatus.textContent = 'Firebase: Save Error';
-                        firebaseStatus.classList.add('error');
-                    });
-            } catch (error) {
-                logDebug('Data extraction error: ' + error.message);
-                firebaseStatus.textContent = 'Firebase: Data Error';
-                firebaseStatus.classList.add('error');
-            }
+    try {
+        logDebug('Starting data save for user: ' + currentUser.uid);
+        const tableData = extractTableData();
+        
+        if (!tableData.rows || tableData.rows.length === 0) {
+            logDebug('WARNING: No table data to save!');
+            return;
         }
+        
+        const data = {
+            title: document.getElementById('bookTitle').value || 'Untitled Thriller',
+            tableData: tableData,
+            lastUpdated: new Date().toISOString(),
+            userEmail: currentUser.email // Add for verification
+        };
+
+        logDebug('Extracted data - rows: ' + tableData.rows.length + ', title: ' + data.title);
+
+        firebase.database().ref(`thriller-outlines/${currentUser.uid}`).set(data)
+            .then(() => {
+                firebaseStatus.textContent = 'Firebase: Saved ✓';
+                firebaseStatus.classList.remove('error');
+                logDebug('Data saved successfully at: ' + new Date().toISOString());
+                
+                // Verify the save by reading it back
+                return firebase.database().ref(`thriller-outlines/${currentUser.uid}`).once('value');
+            })
+            .then(snapshot => {
+                const savedData = snapshot.val();
+                if (savedData && savedData.tableData && savedData.tableData.rows.length > 0) {
+                    logDebug('Verification: Data properly saved with ' + savedData.tableData.rows.length + ' rows');
+                } else {
+                    logDebug('ERROR: Verification failed - data not properly saved!');
+                }
+                
+                setTimeout(() => {
+                    if (firebaseStatus.textContent === 'Firebase: Saved ✓') {
+                        firebaseStatus.textContent = 'Firebase: Connected';
+                    }
+                }, 2000);
+            })
+            .catch(error => {
+                logDebug('Save error: ' + error.message);
+                firebaseStatus.textContent = 'Firebase: Save Error';
+                firebaseStatus.classList.add('error');
+            });
+    } catch (error) {
+        logDebug('Data extraction error: ' + error.message);
+        firebaseStatus.textContent = 'Firebase: Data Error';
+        firebaseStatus.classList.add('error');
+    }
+}
 
         function extractTableData() {
             const table = document.getElementById('outlineTable');
@@ -868,44 +887,50 @@
         }
 
         function loadData() {
-            if (!currentUser) return;
+    if (!currentUser) return;
 
-            logDebug('Loading data for user: ' + currentUser.uid);
-            showLoading();
+    logDebug('Loading data for user: ' + currentUser.uid + ' (' + currentUser.email + ')');
+    showLoading();
+    
+    firebase.database().ref(`thriller-outlines/${currentUser.uid}`).once('value')
+        .then(snapshot => {
+            const data = snapshot.val();
+            if (data) {
+                logDebug('Data found - last updated: ' + (data.lastUpdated || 'unknown'));
+                logDebug('Data contains ' + (data.tableData?.rows?.length || 0) + ' rows');
+                
+                // Set title
+                document.getElementById('bookTitle').value = data.title || 'Untitled Thriller';
+                
+                // Load table data
+                if (data.tableData && data.tableData.rows && data.tableData.rows.length > 0) {
+                    rebuildTableFromData(data.tableData);
+                    logDebug('Table rebuilt from structured data successfully');
+                } else {
+                    logDebug('No valid structured data found - using default table');
+                    rebuildDefaultTable();
+                }
+                
+                firebaseStatus.textContent = 'Firebase: Data Loaded';
+                firebaseStatus.classList.remove('error');
+            } else {
+                logDebug('No data found for user - creating default table');
+                rebuildDefaultTable();
+                firebaseStatus.textContent = 'Firebase: No Data';
+                firebaseStatus.classList.remove('error');
+            }
+            hideLoading();
+        })
+        .catch(error => {
+            logDebug('Load error: ' + error.message);
+            firebaseStatus.textContent = 'Firebase: Load Error';
+            firebaseStatus.classList.add('error');
+            hideLoading();
             
-            firebase.database().ref(`thriller-outlines/${currentUser.uid}`).once('value')
-                .then(snapshot => {
-                    const data = snapshot.val();
-                    if (data) {
-                        logDebug('Data found - rebuilding table');
-                        
-                        // Set title
-                        document.getElementById('bookTitle').value = data.title || 'Untitled Thriller';
-                        
-                        // Load table data
-                        if (data.tableData) {
-                            rebuildTableFromData(data.tableData);
-                            logDebug('Table rebuilt from structured data');
-                        } else {
-                            logDebug('No structured data found');
-                        }
-                        
-                        firebaseStatus.textContent = 'Firebase: Data Loaded';
-                        firebaseStatus.classList.remove('error');
-                    } else {
-                        logDebug('No data found for user');
-                        firebaseStatus.textContent = 'Firebase: No Data';
-                        firebaseStatus.classList.remove('error');
-                    }
-                    hideLoading();
-                })
-                .catch(error => {
-                    logDebug('Load error: ' + error.message);
-                    firebaseStatus.textContent = 'Firebase: Load Error';
-                    firebaseStatus.classList.add('error');
-                    hideLoading();
-                });
-        }
+            // Fallback to default table
+            rebuildDefaultTable();
+        });
+}
 
         function ensureFullTable() {
     // Make sure we have all 9 scenes visible
@@ -1201,6 +1226,16 @@ function rebuildDefaultTable() {
             
             logDebug('Deleted text item');
         }
+
+        function forceSave() {
+    if (!currentUser) {
+        alert('Not logged in - cannot save');
+        return;
+    }
+    
+    logDebug('Manual save triggered');
+    saveData();
+}
 
         function updateItemType(select) {
             const textItem = select.closest('.text-item');
