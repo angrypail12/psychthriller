@@ -466,7 +466,7 @@
             margin-top: 10px;
         }
 
-        /* Title ideas section */
+     /* Title ideas section */
 .title-ideas-section {
     margin-top: 20px;
     padding: 20px;
@@ -482,21 +482,48 @@
     margin-bottom: 15px;
 }
 
-.title-ideas-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
+.title-ideas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     margin-bottom: 15px;
 }
 
 .title-idea-item {
     background: white;
-    padding: 10px;
+    padding: 12px;
     border-radius: 4px;
     border: 1px solid #d1d5db;
     position: relative;
     display: flex;
     align-items: center;
+    cursor: move;
+    transition: all 0.2s ease;
+}
+
+.title-idea-item:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-color: #3b82f6;
+}
+
+.title-idea-item.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+}
+
+.title-rank {
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 10px;
+    flex-shrink: 0;
 }
 
 .title-idea-text {
@@ -506,6 +533,17 @@
     outline: none;
     font-size: 14px;
     padding: 5px;
+}
+
+.drag-handle {
+    margin-right: 8px;
+    color: #6b7280;
+    cursor: grab;
+    font-size: 16px;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
 }
 
 .delete-title-btn {
@@ -531,6 +569,18 @@
 
 .add-title-btn:hover {
     background: #2563eb;
+}
+
+.drop-indicator {
+    height: 2px;
+    background: #3b82f6;
+    margin: 5px 0;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.drop-indicator.active {
+    opacity: 1;
 }
     </style>
 </head>
@@ -661,10 +711,10 @@
 <!-- Title Ideas Section -->
         <div class="title-ideas-section">
             <div class="title-ideas-header">
-                <h3>Title Ideas</h3>
+                <h3>Title Ideas (Drag to Reorder)</h3>
                 <button class="add-title-btn" onclick="addTitleIdea()">Add Title</button>
             </div>
-            <div class="title-ideas-grid" id="titleIdeasGrid">
+            <div class="title-ideas-list" id="titleIdeasList">
                 <!-- Title ideas will be added here -->
             </div>
         </div>
@@ -1684,24 +1734,133 @@ const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary
             }, 30000);
         });
         // Title ideas functions
+let draggedElement = null;
+
 function addTitleIdea() {
-    const grid = document.getElementById('titleIdeasGrid');
+    const list = document.getElementById('titleIdeasList');
+    const titleItem = createTitleItem('', list.children.length + 1);
+    list.appendChild(titleItem);
+    
+    // Focus the new input
+    const input = titleItem.querySelector('.title-idea-text');
+    input.focus();
+    
+    updateRankNumbers();
+    saveTitleIdeas();
+}
+
+function createTitleItem(title, rank) {
     const titleItem = document.createElement('div');
     titleItem.className = 'title-idea-item';
+    titleItem.draggable = true;
     
     titleItem.innerHTML = `
-        <input type="text" class="title-idea-text" placeholder="Enter title idea..." oninput="saveTitleIdeas()">
+        <span class="drag-handle">⋮⋮</span>
+        <span class="title-rank">${rank}</span>
+        <input type="text" class="title-idea-text" value="${title}" placeholder="Enter title idea..." oninput="saveTitleIdeas()">
         <button class="delete-title-btn" onclick="deleteTitleIdea(this)">×</button>
     `;
     
-    grid.appendChild(titleItem);
-    saveTitleIdeas();
+    // Add drag event listeners
+    titleItem.addEventListener('dragstart', handleDragStart);
+    titleItem.addEventListener('dragover', handleDragOver);
+    titleItem.addEventListener('drop', handleDrop);
+    titleItem.addEventListener('dragend', handleDragEnd);
+    
+    return titleItem;
 }
 
 function deleteTitleIdea(button) {
     const titleItem = button.closest('.title-idea-item');
     titleItem.remove();
+    updateRankNumbers();
     saveTitleIdeas();
+}
+
+function updateRankNumbers() {
+    const items = document.querySelectorAll('.title-idea-item');
+    items.forEach((item, index) => {
+        const rankSpan = item.querySelector('.title-rank');
+        rankSpan.textContent = index + 1;
+    });
+}
+
+function handleDragStart(e) {
+    draggedElement = e.target;
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (e.target.closest('.title-idea-item') && e.target.closest('.title-idea-item') !== draggedElement) {
+        const rect = e.target.closest('.title-idea-item').getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        
+        // Remove existing indicators
+        document.querySelectorAll('.drop-indicator').forEach(indicator => {
+            indicator.classList.remove('active');
+        });
+        
+        // Show drop indicator
+        const targetItem = e.target.closest('.title-idea-item');
+        if (e.clientY < midY) {
+            // Insert before
+            insertDropIndicator(targetItem, 'before');
+        } else {
+            // Insert after
+            insertDropIndicator(targetItem, 'after');
+        }
+    }
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    
+    if (e.target.closest('.title-idea-item') && e.target.closest('.title-idea-item') !== draggedElement) {
+        const targetItem = e.target.closest('.title-idea-item');
+        const rect = targetItem.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        
+        if (e.clientY < midY) {
+            // Insert before target
+            targetItem.parentNode.insertBefore(draggedElement, targetItem);
+        } else {
+            // Insert after target
+            targetItem.parentNode.insertBefore(draggedElement, targetItem.nextSibling);
+        }
+        
+        updateRankNumbers();
+        saveTitleIdeas();
+    }
+    
+    // Clean up indicators
+    document.querySelectorAll('.drop-indicator').forEach(indicator => {
+        indicator.remove();
+    });
+}
+
+function handleDragEnd(e) {
+    e.target.classList.remove('dragging');
+    draggedElement = null;
+    
+    // Clean up indicators
+    document.querySelectorAll('.drop-indicator').forEach(indicator => {
+        indicator.remove();
+    });
+}
+
+function insertDropIndicator(targetItem, position) {
+    const indicator = document.createElement('div');
+    indicator.className = 'drop-indicator active';
+    
+    if (position === 'before') {
+        targetItem.parentNode.insertBefore(indicator, targetItem);
+    } else {
+        targetItem.parentNode.insertBefore(indicator, targetItem.nextSibling);
+    }
 }
 
 function saveTitleIdeas() {
@@ -1720,20 +1879,13 @@ function saveTitleIdeas() {
 }
 
 function loadTitleIdeas(titleIdeas) {
-    const grid = document.getElementById('titleIdeasGrid');
-    grid.innerHTML = '';
+    const list = document.getElementById('titleIdeasList');
+    list.innerHTML = '';
     
     if (titleIdeas && titleIdeas.length > 0) {
-        titleIdeas.forEach(title => {
-            const titleItem = document.createElement('div');
-            titleItem.className = 'title-idea-item';
-            
-            titleItem.innerHTML = `
-                <input type="text" class="title-idea-text" value="${title}" oninput="saveTitleIdeas()">
-                <button class="delete-title-btn" onclick="deleteTitleIdea(this)">×</button>
-            `;
-            
-            grid.appendChild(titleItem);
+        titleIdeas.forEach((title, index) => {
+            const titleItem = createTitleItem(title, index + 1);
+            list.appendChild(titleItem);
         });
         logDebug('Loaded ' + titleIdeas.length + ' title ideas');
     }
