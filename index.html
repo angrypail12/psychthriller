@@ -494,21 +494,8 @@
     padding: 12px;
     border-radius: 4px;
     border: 1px solid #d1d5db;
-    position: relative;
     display: flex;
     align-items: center;
-    cursor: move;
-    transition: all 0.2s ease;
-}
-
-.title-idea-item:hover {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-color: #3b82f6;
-}
-
-.title-idea-item.dragging {
-    opacity: 0.5;
-    transform: rotate(2deg);
 }
 
 .title-rank {
@@ -533,17 +520,34 @@
     outline: none;
     font-size: 14px;
     padding: 5px;
+    margin-right: 10px;
 }
 
-.drag-handle {
+.reorder-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     margin-right: 8px;
-    color: #6b7280;
-    cursor: grab;
-    font-size: 16px;
 }
 
-.drag-handle:active {
-    cursor: grabbing;
+.reorder-btn {
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 10px;
+    line-height: 1;
+}
+
+.reorder-btn:hover {
+    background: #4b5563;
+}
+
+.reorder-btn:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
 }
 
 .delete-title-btn {
@@ -554,7 +558,6 @@
     padding: 4px 8px;
     cursor: pointer;
     font-size: 12px;
-    margin-left: 5px;
 }
 
 .add-title-btn {
@@ -569,18 +572,6 @@
 
 .add-title-btn:hover {
     background: #2563eb;
-}
-
-.drop-indicator {
-    height: 2px;
-    background: #3b82f6;
-    margin: 5px 0;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.drop-indicator.active {
-    opacity: 1;
 }
     </style>
 </head>
@@ -732,7 +723,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-database-compat.js"></script>
 
     <script>
-        let isDragging = false;
         // Firebase configuration
         const firebaseConfig = {
     apiKey: "AIzaSyD74wPC0oyB8jnS3rPgkfa6szzyBPLrbfg",
@@ -1739,9 +1729,7 @@ const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary
                 }
             }, 30000);
         });
-        // Title ideas functions
-let draggedElement = null;
-
+       // Title ideas functions
 function addTitleIdea() {
     const list = document.getElementById('titleIdeasList');
     const titleItem = createTitleItem('', list.children.length + 1);
@@ -1758,36 +1746,38 @@ function addTitleIdea() {
 function createTitleItem(title, rank) {
     const titleItem = document.createElement('div');
     titleItem.className = 'title-idea-item';
-    titleItem.draggable = true;
     
     titleItem.innerHTML = `
-        <span class="drag-handle">⋮⋮</span>
         <span class="title-rank">${rank}</span>
         <input type="text" class="title-idea-text" value="${title}" placeholder="Enter title idea..." oninput="saveTitleIdeas()">
+        <div class="reorder-buttons">
+            <button class="reorder-btn" onclick="moveUp(this)" title="Move up">▲</button>
+            <button class="reorder-btn" onclick="moveDown(this)" title="Move down">▼</button>
+        </div>
         <button class="delete-title-btn" onclick="deleteTitleIdea(this)">×</button>
     `;
     
-    // Add drag event listeners
-titleItem.addEventListener('dragstart', (e) => {
-    isDragging = true;
-    handleDragStart(e);
-});
-titleItem.addEventListener('dragover', handleDragOver);
-titleItem.addEventListener('drop', (e) => {
-    handleDrop(e);
-    setTimeout(() => {
-        isDragging = false;
-        saveTitleIdeas(); // Save after drag is complete
-    }, 100);
-});
-titleItem.addEventListener('dragend', (e) => {
-    handleDragEnd(e);
-    setTimeout(() => {
-        isDragging = false;
-    }, 100);
-});
-    
     return titleItem;
+}
+
+function moveUp(button) {
+    const item = button.closest('.title-idea-item');
+    const prevItem = item.previousElementSibling;
+    if (prevItem) {
+        item.parentNode.insertBefore(item, prevItem);
+        updateRankNumbers();
+        saveTitleIdeas();
+    }
+}
+
+function moveDown(button) {
+    const item = button.closest('.title-idea-item');
+    const nextItem = item.nextElementSibling;
+    if (nextItem) {
+        item.parentNode.insertBefore(nextItem, item);
+        updateRankNumbers();
+        saveTitleIdeas();
+    }
 }
 
 function deleteTitleIdea(button) {
@@ -1802,91 +1792,18 @@ function updateRankNumbers() {
     items.forEach((item, index) => {
         const rankSpan = item.querySelector('.title-rank');
         rankSpan.textContent = index + 1;
+        
+        // Disable up button for first item, down button for last item
+        const upBtn = item.querySelector('.reorder-btn:first-child');
+        const downBtn = item.querySelector('.reorder-btn:last-child');
+        upBtn.disabled = (index === 0);
+        downBtn.disabled = (index === items.length - 1);
     });
-}
-
-function handleDragStart(e) {
-    draggedElement = e.target;
-    e.target.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    if (e.target.closest('.title-idea-item') && e.target.closest('.title-idea-item') !== draggedElement) {
-        const rect = e.target.closest('.title-idea-item').getBoundingClientRect();
-        const midY = rect.top + rect.height / 2;
-        
-        // Remove existing indicators
-        document.querySelectorAll('.drop-indicator').forEach(indicator => {
-            indicator.classList.remove('active');
-        });
-        
-        // Show drop indicator
-        const targetItem = e.target.closest('.title-idea-item');
-        if (e.clientY < midY) {
-            // Insert before
-            insertDropIndicator(targetItem, 'before');
-        } else {
-            // Insert after
-            insertDropIndicator(targetItem, 'after');
-        }
-    }
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    
-    if (e.target.closest('.title-idea-item') && e.target.closest('.title-idea-item') !== draggedElement) {
-        const targetItem = e.target.closest('.title-idea-item');
-        const rect = targetItem.getBoundingClientRect();
-        const midY = rect.top + rect.height / 2;
-        
-        if (e.clientY < midY) {
-            // Insert before target
-            targetItem.parentNode.insertBefore(draggedElement, targetItem);
-        } else {
-            // Insert after target
-            targetItem.parentNode.insertBefore(draggedElement, targetItem.nextSibling);
-        }
-        
-        updateRankNumbers();
-        saveTitleIdeas();
-    }
-    
-    // Clean up indicators
-    document.querySelectorAll('.drop-indicator').forEach(indicator => {
-        indicator.remove();
-    });
-}
-
-function handleDragEnd(e) {
-    e.target.classList.remove('dragging');
-    draggedElement = null;
-    
-    // Clean up indicators
-    document.querySelectorAll('.drop-indicator').forEach(indicator => {
-        indicator.remove();
-    });
-}
-
-function insertDropIndicator(targetItem, position) {
-    const indicator = document.createElement('div');
-    indicator.className = 'drop-indicator active';
-    
-    if (position === 'before') {
-        targetItem.parentNode.insertBefore(indicator, targetItem);
-    } else {
-        targetItem.parentNode.insertBefore(indicator, targetItem.nextSibling);
-    }
 }
 
 function saveTitleIdeas() {
-    if (!currentUser || isDragging) {
-        if (isDragging) logDebug('Skipping save during drag operation');
-        if (!currentUser) logDebug('Cannot save title ideas - no user logged in');
+    if (!currentUser) {
+        logDebug('Cannot save title ideas - no user logged in');
         return;
     }
     
@@ -1922,6 +1839,7 @@ function loadTitleIdeas(titleIdeas) {
             const titleItem = createTitleItem(title, index + 1);
             list.appendChild(titleItem);
         });
+        updateRankNumbers();
         logDebug('Loaded ' + titleIdeas.length + ' title ideas');
     } else {
         logDebug('No title ideas to load (titleIdeas was null, undefined, or empty)');
