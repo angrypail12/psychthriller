@@ -170,38 +170,26 @@
             transition: opacity 0.3s;
         }
 
-        .data-cell {
-            min-height: 80px;
-            position: relative;
-            background-color: white;
-        }
-
-        .text-item {
-            margin-bottom: 8px;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #e2e8f0;
-            background-color: #fafafa;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            font-size: 13px;
-        }
-
         .item-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            min-height: 20px; /* Ensure minimum height for controls */
-        }
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 20px;
+    width: 100%; /* Take full width */
+    box-sizing: border-box; /* Include padding in width */
+}
 
         .type-select {
-            font-size: 11px;
-            padding: 2px 4px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            background: white;
-        }
+    font-size: 11px;
+    padding: 2px 4px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: white;
+    max-width: 120px; /* Limit dropdown width */
+    overflow: hidden; /* Hide overflow text */
+    text-overflow: ellipsis; /* Show ... for long text */
+    white-space: nowrap; /* Keep text on one line */
+}
 
         .delete-item-btn {
             background: #ef4444;
@@ -322,11 +310,13 @@
     min-width: 80px;
 }
 
-        /* Fix data cell backgrounds - remove blue background */
+     /* Fix data cell backgrounds - remove blue background */
 .data-cell {
     min-height: 80px;
     position: relative;
     background-color: white !important;
+    overflow: hidden; /* Prevent content from spilling into other cells */
+    box-sizing: border-box;
 }
 
 /* Right-align add buttons */
@@ -373,6 +363,9 @@
     gap: 5px;
     font-size: 13px;
     min-height: auto; /* Remove fixed height constraint */
+    width: 100%; /* Ensure it takes full width of cell */
+    box-sizing: border-box; /* Include padding in width calculation */
+    overflow: hidden; /* Prevent overflow into neighboring cells */
 }
 
 .act1-summary { border-left-color: #10b981; background-color: #d1fae5 !important; }
