@@ -893,12 +893,17 @@
             return;
         }
         
-        const data = {
-            title: document.getElementById('bookTitle').value || 'Untitled Thriller',
-            tableData: tableData,
-            lastUpdated: new Date().toISOString(),
-            userEmail: currentUser.email // Add for verification
-        };
+        // Get current title ideas
+const titleInputs = document.querySelectorAll('.title-idea-text');
+const titleIdeas = Array.from(titleInputs).map(input => input.value.trim()).filter(title => title !== '');
+
+const data = {
+    title: document.getElementById('bookTitle').value || 'Untitled Thriller',
+    tableData: tableData,
+    titleIdeas: titleIdeas, // Include title ideas
+    lastUpdated: new Date().toISOString(),
+    userEmail: currentUser.email // Add for verification
+};
 
         logDebug('Extracted data - rows: ' + tableData.rows.length + ', title: ' + data.title);
         logDebug('Full extracted data: ' + JSON.stringify(tableData, null, 2));
