@@ -66,6 +66,8 @@
 .table-wrapper {
     overflow-x: auto;
     margin-bottom: 20px;
+    height: 80vh; /* Add a specific height */
+    overflow-y: auto; /* Allow vertical scrolling within the wrapper */
 }
 
         .title-section {
@@ -230,15 +232,15 @@
         }
 
 .outline-table thead th {
-    background-color: #f8fafc;
+    background-color: #f8fafc !important;
     padding: 12px 8px;
     text-align: left;
     border: 1px solid #e2e8f0;
     font-weight: 600;
     font-size: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
 }
 
 .outline-table tbody td:first-child {
