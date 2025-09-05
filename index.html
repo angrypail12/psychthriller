@@ -125,15 +125,20 @@
             font-size: 13px;
         }
 
-        .outline-table th {
-            background-color: #f8fafc;
-            padding: 12px 8px;
-            text-align: left;
-            border: 1px solid #e2e8f0;
-            font-weight: 600;
-            font-size: 12px;
-            position: relative;
-        }
+        /* Combined header styling */
+.outline-table th {
+    background-color: #f8fafc;
+    padding: 12px 8px;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+    font-weight: 600;
+    font-size: 12px;
+    white-space: normal;
+    word-wrap: break-word;
+    vertical-align: top;
+    line-height: 1.2;
+    /* Remove position: relative to allow sticky positioning */
+}
 
         .outline-table td {
             border: 1px solid #e2e8f0;
@@ -287,14 +292,6 @@
     width: 12.5%; /* 8 columns = 100% / 8 = 12.5% each */
     min-width: 150px; /* Minimum width to ensure readability */
     max-width: 200px; /* Maximum width to prevent excessive expansion */
-}
-
-/* Allow header text to wrap */
-.outline-table th {
-    white-space: normal;
-    word-wrap: break-word;
-    vertical-align: top;
-    line-height: 1.2;
 }
 
 /* Ensure the scenes and act summary columns stay their current size */
