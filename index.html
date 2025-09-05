@@ -1032,7 +1032,12 @@ function rebuildDefaultTable() {
             return;
         }
 
-        logDebug('Processing row ' + index + ': ' + rowData.scene + ', columns: ' + (rowData.columns ? rowData.columns.length : 'undefined'));
+        // ADD THIS DEBUGGING
+logDebug('Rebuilding row ' + index + ': columns = ' + JSON.stringify(rowData.columns));
+logDebug('Columns type: ' + typeof rowData.columns);
+logDebug('Columns is array: ' + Array.isArray(rowData.columns));
+
+logDebug('Processing row ' + index + ': ' + rowData.scene + ', columns: ' + (rowData.columns ? rowData.columns.length : 'undefined'));
 
         const row = document.createElement('tr');
         row.className = rowData.actClass || 'act2';
