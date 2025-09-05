@@ -511,8 +511,8 @@
             <div class="controls">
     <button class="btn btn-primary" onclick="addColumn()">Add Column</button>
     <button class="btn btn-primary" onclick="addScene()">Add Scene</button>
-    <button class="btn btn-primary" onclick="forceSave()">Save Now</button>            
-    <button class="btn btn-secondary" onclick="exportData()">Export Data</button>
+    <button class="btn btn-primary" onclick="forceSave()">Save Now</button> 
+    <button class="btn btn-secondary" onclick="exportDataToConsole()">Backup to Console</button>
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
     <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import Data</button>
 </div>
@@ -1236,6 +1236,17 @@ function rebuildDefaultTable() {
     saveData();
 }
 
+        function exportDataToConsole() {
+    const data = {
+        title: document.getElementById('bookTitle').value,
+        tableData: extractTableData(),
+        exportDate: new Date().toISOString()
+    };
+    console.log('BACKUP DATA - Copy this entire object:');
+    console.log(JSON.stringify(data, null, 2));
+    alert('Check the browser console (F12) for your backup data');
+}
+
         function updateItemType(select) {
             const textItem = select.closest('.text-item');
             
@@ -1485,26 +1496,36 @@ function rebuildDefaultTable() {
         }
 
         function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+    const file = event.target.files[0];
+    if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            // Set title
+            document.getElementById('bookTitle').value = data.title || 'Imported Thriller';
+            
+            // Try to rebuild table, with fallback
+            if (data.tableData) {
                 try {
-                    const data = JSON.parse(e.target.result);
-                    document.getElementById('bookTitle').value = data.title || 'Imported Thriller';
-                    if (data.tableData) {
-                        rebuildTableFromData(data.tableData);
-                        scheduleAutoSave();
-                        logDebug('Data imported successfully');
-                    }
+                    rebuildTableFromData(data.tableData);
+                    logDebug('Data imported successfully');
                 } catch (error) {
-                    alert('Error importing file: ' + error.message);
-                    logDebug('Import error: ' + error.message);
+                    logDebug('Error rebuilding from imported data: ' + error.message);
+                    rebuildDefaultTable();
+                    alert('Imported data structure was incompatible. Created default table instead.');
                 }
-            };
-            reader.readAsText(file);
+                scheduleAutoSave();
+            }
+        } catch (error) {
+            alert('Error importing file: ' + error.message);
+            logDebug('Import error: ' + error.message);
         }
+    };
+    reader.readAsText(file);
+}
 
         // Auth state listener
         firebase.auth().onAuthStateChanged(user => {
