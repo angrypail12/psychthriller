@@ -773,6 +773,7 @@
         };
 
         logDebug('Extracted data - rows: ' + tableData.rows.length + ', title: ' + data.title);
+        logDebug('Full extracted data: ' + JSON.stringify(tableData, null, 2));
 
         firebase.database().ref(`thriller-outlines/${currentUser.uid}`).set(data)
             .then(() => {
@@ -873,6 +874,7 @@
         });
 
         logDebug(`Extracting row ${rowIndex}: ${sceneText}, found ${rowData.columns.length} data columns`);
+        logDebug(`Row ${rowIndex} column data: ${JSON.stringify(rowData.columns)}`);
         extractedData.rows.push(rowData);
     });
 
