@@ -1727,7 +1727,7 @@ const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary
                     logDebug('Periodic auto-save triggered');
                     saveData();
                 }
-            }, 30000);
+            }, 120000);
         });
        // Title ideas functions
 function addTitleIdea() {
@@ -1749,7 +1749,7 @@ function createTitleItem(title, rank) {
     
     titleItem.innerHTML = `
         <span class="title-rank">${rank}</span>
-        <input type="text" class="title-idea-text" value="${title}" placeholder="Enter title idea..." oninput="saveTitleIdeas()">
+        <input type="text" class="title-idea-text" value="${title}" placeholder="Enter title idea..." onblur="saveTitleIdeas()">
         <div class="reorder-buttons">
             <button class="reorder-btn" onclick="moveUp(this)" title="Move up">▲</button>
             <button class="reorder-btn" onclick="moveDown(this)" title="Move down">▼</button>
