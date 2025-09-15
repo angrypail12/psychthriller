@@ -573,6 +573,14 @@
 .add-title-btn:hover {
     background: #2563eb;
 }
+
+        /* Color coding for items */
+.color-red { background-color: #fef2f2 !important; border-left: 4px solid #ef4444 !important; }
+.color-blue { background-color: #eff6ff !important; border-left: 4px solid #3b82f6 !important; }
+.color-green { background-color: #f0fdf4 !important; border-left: 4px solid #10b981 !important; }
+.color-yellow { background-color: #fefce8 !important; border-left: 4px solid #f59e0b !important; }
+.color-purple { background-color: #faf5ff !important; border-left: 4px solid #8b5cf6 !important; }
+.color-none { background-color: #fafafa !important; border-left: 1px solid #e2e8f0 !important; }
     </style>
 </head>
 <body>
@@ -978,11 +986,16 @@ const data = {
                     const type = typeSelect ? typeSelect.value : '';
                     
                     if (content.trim()) {
-                        columnData.push({
-                            content: content.trim(),
-                            type: type
-                        });
-                    }
+    // Get color from item classes
+    const colorClass = Array.from(item.classList).find(cls => cls.startsWith('color-'));
+    const color = colorClass ? colorClass.replace('color-', '') : 'none';
+    
+    columnData.push({
+        content: content.trim(),
+        type: type,
+        color: color
+    });
+}
                 });
 
                 // Make sure we have the right index in the columns array
@@ -1224,7 +1237,7 @@ const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary
             if (i < columns.length && Array.isArray(columns[i])) {
                 columns[i].forEach(itemData => {
                     if (itemData && itemData.content) {
-                        addTextItemWithData(dataCell, itemData.content, itemData.type, i + 2);
+                        addTextItemWithData(dataCell, itemData.content, itemData.type, i + 2, itemData.color);
                     }
                 });
             }
@@ -1248,42 +1261,78 @@ const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary
     logDebug('Table rebuilt from structured data');
 }
 
-        function addTextItemWithData(cell, content, type, columnIndex) {
-            const textItem = document.createElement('div');
-            textItem.className = 'text-item';
-            
-            if (type) {
-                textItem.classList.add('type-' + type);
-            }
+        function addTextItemWithData(cell, content, type, columnIndex, color) {
+    const textItem = document.createElement('div');
+    textItem.className = 'text-item';
+    
+    if (type) {
+        textItem.classList.add('type-' + type);
+    }
+    
+    if (color) {
+        textItem.classList.add('color-' + color);
+    }
 
-            const options = getOptionsForColumn(columnIndex);
+    const options = getOptionsForColumn(columnIndex);
 
-            if (options.length > 1) {
-                const optionsHtml = options.map(opt => 
-                    `<option value="${opt.value}" ${opt.value === type ? 'selected' : ''}>${opt.text}</option>`
-                ).join('');
-                
-                textItem.innerHTML = `
-                    <textarea class="item-content" placeholder="Enter your item...">${content}</textarea>
-                    <div class="item-controls">
-                        <select class="type-select" onchange="updateItemType(this)">
-                            ${optionsHtml}
-                        </select>
-                        <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
-                    </div>
-                `;
-            } else {
-                textItem.innerHTML = `
-                    <textarea class="item-content" placeholder="Enter your item...">${content}</textarea>
-                    <div class="item-controls">
-                        <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
-                    </div>
-                `;
-            }
+    if (options.length > 1) {
+        const optionsHtml = options.map(opt => 
+            `<option value="${opt.value}" ${opt.value === type ? 'selected' : ''}>${opt.text}</option>`
+        ).join('');
+        
+        const colorOptions = [
+            { value: 'none', text: 'No Color' },
+            { value: 'red', text: 'Red' },
+            { value: 'blue', text: 'Blue' },
+            { value: 'green', text: 'Green' },
+            { value: 'yellow', text: 'Yellow' },
+            { value: 'purple', text: 'Purple' }
+        ];
+        
+        const colorOptionsHtml = colorOptions.map(opt => 
+            `<option value="${opt.value}" ${opt.value === (color || 'none') ? 'selected' : ''}>${opt.text}</option>`
+        ).join('');
+        
+        textItem.innerHTML = `
+            <textarea class="item-content" placeholder="Enter your item...">${content}</textarea>
+            <div class="item-controls">
+                <select class="type-select" onchange="updateItemType(this)">
+                    ${optionsHtml}
+                </select>
+                <select class="color-select" onchange="updateItemColor(this)">
+                    ${colorOptionsHtml}
+                </select>
+                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+            </div>
+        `;
+    } else {
+        const colorOptions = [
+            { value: 'none', text: 'No Color' },
+            { value: 'red', text: 'Red' },
+            { value: 'blue', text: 'Blue' },
+            { value: 'green', text: 'Green' },
+            { value: 'yellow', text: 'Yellow' },
+            { value: 'purple', text: 'Purple' }
+        ];
+        
+        const colorOptionsHtml = colorOptions.map(opt => 
+            `<option value="${opt.value}" ${opt.value === (color || 'none') ? 'selected' : ''}>${opt.text}</option>`
+        ).join('');
+        
+        textItem.innerHTML = `
+            <textarea class="item-content" placeholder="Enter your item...">${content}</textarea>
+            <div class="item-controls">
+                <select class="color-select" onchange="updateItemColor(this)">
+                    ${colorOptionsHtml}
+                </select>
+                <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
+            </div>
+        `;
+    }
 
-            const addButton = cell.querySelector('.add-item-btn');
+    const addButton = cell.querySelector('.add-item-btn');
     cell.insertBefore(textItem, addButton);
-        }
+}
 
         function getOptionsForColumn(columnIndex) {
     switch (columnIndex) {
@@ -1331,9 +1380,22 @@ const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary
     const cell = button.parentNode;
     const columnIndex = parseInt(cell.dataset.column);
     const textItem = document.createElement('div');
-    textItem.className = 'text-item';
+    textItem.className = 'text-item color-none'; // Default to no color
 
     const options = getOptionsForColumn(columnIndex);
+    
+    const colorOptions = [
+        { value: 'none', text: 'No Color' },
+        { value: 'red', text: 'Red' },
+        { value: 'blue', text: 'Blue' },
+        { value: 'green', text: 'Green' },
+        { value: 'yellow', text: 'Yellow' },
+        { value: 'purple', text: 'Purple' }
+    ];
+    
+    const colorOptionsHtml = colorOptions.map(opt => 
+        `<option value="${opt.value}" ${opt.value === 'none' ? 'selected' : ''}>${opt.text}</option>`
+    ).join('');
 
     if (options.length > 1) {
         textItem.innerHTML = `
@@ -1342,6 +1404,9 @@ const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary
                 <select class="type-select" onchange="updateItemType(this)">
                     ${options.map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('')}
                 </select>
+                <select class="color-select" onchange="updateItemColor(this)">
+                    ${colorOptionsHtml}
+                </select>
                 <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
             </div>
         `;
@@ -1349,6 +1414,9 @@ const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary
         textItem.innerHTML = `
             <textarea class="item-content" placeholder="Enter your item..."></textarea>
             <div class="item-controls">
+                <select class="color-select" onchange="updateItemColor(this)">
+                    ${colorOptionsHtml}
+                </select>
                 <button class="delete-item-btn" onclick="deleteTextItem(this)">×</button>
             </div>
         `;
@@ -1425,6 +1493,21 @@ const expectedDataColumns = totalHeaders - 2; // Subtract scenes and act summary
             
             logDebug('Updated item type to: ' + select.value);
         }
+
+        // ADD THE NEW FUNCTION RIGHT HERE:
+function updateItemColor(select) {
+    const textItem = select.closest('.text-item');
+    
+    // Remove all color classes
+    const colorClasses = ['color-red', 'color-blue', 'color-green', 'color-yellow', 'color-purple', 'color-none'];
+    colorClasses.forEach(cls => textItem.classList.remove(cls));
+    
+    // Add new color class
+    textItem.classList.add('color-' + select.value);
+    scheduleAutoSave();
+    
+    logDebug('Updated item color to: ' + select.value);
+}
 
         function addColumn() {
             const table = document.getElementById('outlineTable');
